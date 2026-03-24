@@ -3,6 +3,7 @@ import { Renderer, type RendererEvents } from '../src/index';
 
 // --- logging ---
 const logEl = document.getElementById('log')!;
+logEl.innerHTML = ''; // clear on HMR reload
 function log(msg: string, error = false) {
   const el = document.createElement('div');
   el.className = 'log-entry' + (error ? ' error' : '');
@@ -13,6 +14,7 @@ function log(msg: string, error = false) {
 
 // --- setup ---
 const container = document.getElementById('chart')!;
+container.innerHTML = ''; // clear on HMR reload
 const bus = new EventBus<RendererEvents>();
 const renderer = new Renderer(container, bus);
 log('Renderer initialized');
