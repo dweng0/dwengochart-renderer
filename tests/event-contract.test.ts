@@ -38,6 +38,22 @@ describe('Event Contract', () => {
     expect(group.getAttribute('data-color')).toBe('blue');
   });
 
+  // listen_to_seriesdata_event
+  it('listen to series:data event', () => {
+    eventbus.emit('series:add', { id: 's1', type: 'candlestick' });
+    eventbus.emit('series:data', {
+      id: 's1',
+      bars: [
+        { time: 1000, open: 100, high: 110, low: 90, close: 105 },
+        { time: 2000, open: 105, high: 115, low: 95, close: 98 },
+        { time: 3000, open: 98,  high: 108, low: 88, close: 102 },
+      ],
+    });
+    const group = container.querySelector('[data-series-id="s1"]')!;
+    const bars = group.querySelectorAll('.bar');
+    expect(bars.length).toBe(3);
+  });
+
   // listen_to_seriesorder_event
   it('listen to series:order event', () => {
     eventbus.emit('series:add', { id: 's1', type: 'line' });

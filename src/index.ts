@@ -104,6 +104,18 @@ export class Renderer {
         const group = this.seriesLayer.querySelector(`[data-series-id="${payload.id}"]`);
         group?.setAttribute('display', 'none');
       }),
+      eventbus.on('series:data', (payload) => {
+        const group = this.seriesLayer.querySelector(`[data-series-id="${payload.id}"]`);
+        if (!group) return;
+        // Clear previous render
+        while (group.firstChild) group.removeChild(group.firstChild);
+        // Render one <g class="bar"> per bar (coordinates come later from viewport:changed)
+        for (const _bar of payload.bars) {
+          const barEl = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+          barEl.setAttribute('class', 'bar');
+          group.appendChild(barEl);
+        }
+      }),
       eventbus.on('series:remove', (payload) => {
         const group = this.seriesLayer.querySelector(`[data-series-id="${payload.id}"]`);
         group?.remove();
