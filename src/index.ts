@@ -87,6 +87,8 @@ export class Renderer {
   private priceAxisDragStartY: number | null = null;
   private currencySymbol = '';
   private lastClosePrice: number | null = null;
+  private crosshairEl: SVGGElement;
+  private crosshairDashed = false;
   private domListeners: Array<{ el: Element; type: string; fn: EventListener }> = [];
   private eventbus: EventBus<RendererEvents>;
   private resizeObserver: ResizeObserver;
@@ -137,6 +139,12 @@ export class Renderer {
     timeAxis.setAttribute('class', 'time-axis');
     svg.appendChild(timeAxis);
     this.timeAxisEl = timeAxis;
+
+    const crosshair = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    crosshair.setAttribute('class', 'crosshair-layer');
+    crosshair.setAttribute('display', 'none');
+    svg.appendChild(crosshair);
+    this.crosshairEl = crosshair;
 
     this.bindDomEvents(eventbus);
     eventbus.emit('renderer:ready', {});
@@ -221,6 +229,8 @@ export class Renderer {
         if (theme.background) this.svg.setAttribute('data-theme-background', theme.background as string);
         if (theme.text) this.svg.setAttribute('data-theme-text', theme.text as string);
         if (theme.grid) this.svg.setAttribute('data-theme-grid', theme.grid as string);
+        if (theme.crosshairStyle === 'dashed') this.crosshairDashed = true;
+        else if (theme.crosshairStyle === 'solid') this.crosshairDashed = false;
       }),
       eventbus.on('chart:loading', (payload) => {
         const existing = this.svg.querySelector('.loading-indicator');
@@ -835,6 +845,86 @@ export class Renderer {
     }
   }
 
+  private renderCrosshair(x: number, y: number, snap = false): void {
+    const ch = this.crosshairEl;
+    while (ch.firstChild) ch.removeChild(ch.firstChild);
+    ch.removeAttribute('display');
+
+    // Snap to nearest bar if snap is enabled
+    let crossX = x;
+    if (snap) {
+      let bestDist = Infinity;
+      for (const bars of this.seriesBars.values()) {
+        for (const bar of bars) {
+          const bx = this.scaleX(bar.time);
+          const dist = Math.abs(bx - x);
+          if (dist < bestDist) {
+            bestDist = dist;
+            crossX = bx;
+          }
+        }
+      }
+    }
+
+    const dashArray = this.crosshairDashed ? '4,2' : undefined;
+
+    const mkLine = (x1: number, y1: number, x2: number, y2: number) => {
+      const el = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      el.setAttribute('x1', String(x1)); el.setAttribute('y1', String(y1));
+      el.setAttribute('x2', String(x2)); el.setAttribute('y2', String(y2));
+      el.setAttribute('stroke', '#aaa');
+      el.setAttribute('stroke-width', '1');
+      if (dashArray) el.setAttribute('stroke-dasharray', dashArray);
+      return el;
+    };
+
+    // Vertical line
+    const vLine = mkLine(crossX, 0, crossX, this.viewHeight);
+    vLine.setAttribute('data-crosshair-v', '');
+    ch.appendChild(vLine);
+
+    // Horizontal line
+    const hLine = mkLine(0, y, this.viewWidth, y);
+    hLine.setAttribute('data-crosshair-h', '');
+    ch.appendChild(hLine);
+
+    // Find nearest bar for tooltip
+    let nearestBar: import('./index').Bar | null = null;
+    let minDist = Infinity;
+    for (const bars of this.seriesBars.values()) {
+      for (const bar of bars) {
+        const dist = Math.abs(this.scaleX(bar.time) - crossX);
+        if (dist < minDist) { minDist = dist; nearestBar = bar; }
+      }
+    }
+
+    if (nearestBar && minDist < 50) {
+      const tooltipX = Math.min(crossX + 8, this.viewWidth - 80);
+      const tooltipY = Math.max(y - 60, 10);
+      const b = nearestBar;
+      const lines = [
+        `O: ${b.open.toFixed(2)}`,
+        `H: ${b.high.toFixed(2)}`,
+        `L: ${b.low.toFixed(2)}`,
+        `C: ${b.close.toFixed(2)}`,
+        `V: ${b.volume ?? 0}`,
+      ];
+      lines.forEach((line, i) => {
+        const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        t.setAttribute('x', String(tooltipX));
+        t.setAttribute('y', String(tooltipY + i * 14));
+        t.setAttribute('font-size', '11');
+        t.textContent = line;
+        ch.appendChild(t);
+      });
+    }
+  }
+
+  private hideCrosshair(eventbus: EventBus<RendererEvents>): void {
+    this.crosshairEl.setAttribute('display', 'none');
+    eventbus.emit('interaction:crosshair', null);
+  }
+
   private bindDomEvents(eventbus: EventBus<RendererEvents>): void {
     const rect = () => this.svg.getBoundingClientRect();
 
@@ -847,13 +937,22 @@ export class Renderer {
 
     const onMouseMove = ((e: Event) => {
       const me = e as MouseEvent;
+      const r = rect();
+      const x = me.clientX - r.left;
+      const y = me.clientY - r.top;
       if (me.buttons === 1 && this.dragStartX !== null) {
         const deltaX = me.clientX - this.dragStartX;
         this.dragStartX = me.clientX;
+        this.crosshairEl.setAttribute('display', 'none');
         eventbus.emit('interaction:pan', { deltaX });
       } else {
+        this.renderCrosshair(x, y);
         eventbus.emit('interaction:crosshair', toPoint(me));
       }
+    }) as EventListener;
+
+    const onMouseLeave = (() => {
+      this.hideCrosshair(eventbus);
     }) as EventListener;
 
     const onMouseDown = ((e: Event) => {
@@ -862,6 +961,33 @@ export class Renderer {
 
     const onMouseUp = (() => {
       this.dragStartX = null;
+    }) as EventListener;
+
+    // Touch events for crosshair
+    const onTouchStart = ((e: Event) => {
+      const te = e as TouchEvent;
+      if (te.touches.length > 0) {
+        const r = rect();
+        const t = te.touches[0];
+        const x = t.clientX - r.left;
+        const y = t.clientY - r.top;
+        this.renderCrosshair(x, y);
+      }
+    }) as EventListener;
+
+    const onTouchMove = ((e: Event) => {
+      const te = e as TouchEvent;
+      if (te.touches.length > 0) {
+        const r = rect();
+        const t = te.touches[0];
+        const x = t.clientX - r.left;
+        const y = t.clientY - r.top;
+        this.renderCrosshair(x, y);
+      }
+    }) as EventListener;
+
+    const onTouchEnd = (() => {
+      this.hideCrosshair(eventbus);
     }) as EventListener;
 
     const onClick = ((e: Event) => {
@@ -899,11 +1025,15 @@ export class Renderer {
 
     const listeners: Array<{ el: Element; type: string; fn: EventListener }> = [
       { el: this.svg, type: 'mousemove', fn: onMouseMove },
+      { el: this.svg, type: 'mouseleave', fn: onMouseLeave },
       { el: this.svg, type: 'mousedown', fn: onMouseDown },
       { el: this.svg, type: 'mouseup', fn: onMouseUp },
       { el: this.svg, type: 'click', fn: onClick },
       { el: this.svg, type: 'dblclick', fn: onDblClick },
       { el: this.svg, type: 'wheel', fn: onWheel },
+      { el: this.svg, type: 'touchstart', fn: onTouchStart },
+      { el: this.svg, type: 'touchmove', fn: onTouchMove },
+      { el: this.svg, type: 'touchend', fn: onTouchEnd },
       { el: this.priceAxisEl, type: 'mousedown', fn: onPriceAxisMouseDown },
       { el: this.priceAxisEl, type: 'mousemove', fn: onPriceAxisMouseMove },
       { el: this.priceAxisEl, type: 'mouseup', fn: onPriceAxisMouseUp },

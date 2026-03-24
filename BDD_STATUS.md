@@ -1,6 +1,6 @@
 # BDD Status
 
-Checked 143 scenario(s) across 12 test file(s).
+Checked 143 scenario(s) across 13 test file(s).
 
 
 ## Feature: Event Contract
@@ -138,14 +138,14 @@ Checked 143 scenario(s) across 12 test file(s).
 ## Feature: Crosshair
 
 - [x] Show crosshair on mouse move
-- [ ] UNCOVERED: Snap crosshair to nearest bar
-- [ ] UNCOVERED: Hide crosshair when mouse leaves SVG
+- [x] Snap crosshair to nearest bar
+- [x] Hide crosshair when mouse leaves SVG
 - [x] Emit interaction:crosshair on mouse move
-- [ ] UNCOVERED: Crosshair tooltip shows OHLCV values
-- [ ] UNCOVERED: Crosshair line style from theme
-- [ ] UNCOVERED: Crosshair is hidden during pan drag
-- [ ] UNCOVERED: Crosshair activation on touch devices
-- [ ] UNCOVERED: Crosshair magnet mode is toggleable
+- [x] Crosshair tooltip shows OHLCV values
+- [x] Crosshair line style from theme
+- [x] Crosshair is hidden during pan drag
+- [x] Crosshair activation on touch devices
+- [x] Crosshair magnet mode is toggleable
 
 ## Feature: Pan Interaction
 
@@ -204,16 +204,9 @@ Checked 143 scenario(s) across 12 test file(s).
 - [ ] UNCOVERED: Watermark is configurable
 
 ---
-**106/143 scenarios covered.**
+**113/143 scenarios covered.**
 
-37 scenario(s) need tests:
-- Snap crosshair to nearest bar
-- Hide crosshair when mouse leaves SVG
-- Crosshair tooltip shows OHLCV values
-- Crosshair line style from theme
-- Crosshair is hidden during pan drag
-- Crosshair activation on touch devices
-- Crosshair magnet mode is toggleable
+30 scenario(s) need tests:
 - Emit interaction:pan on mouse drag
 - Emit interaction:pan on touch drag
 - Viewport updates only via viewport:changed
