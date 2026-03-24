@@ -1,6 +1,6 @@
 # BDD Status
 
-Checked 143 scenario(s) across 6 test file(s).
+Checked 143 scenario(s) across 7 test file(s).
 
 
 ## Feature: Event Contract
@@ -69,12 +69,12 @@ Checked 143 scenario(s) across 6 test file(s).
 
 ## Feature: Line Series Rendering
 
-- [ ] UNCOVERED: Render a line connecting close prices
+- [x] Render a line connecting close prices
 - [x] Render with a single bar
 - [x] Render with no bars
-- [ ] UNCOVERED: Line is clipped to viewport boundaries
-- [ ] UNCOVERED: Render a line with exactly two bars
-- [ ] UNCOVERED: Line width is configurable via series options
+- [x] Line is clipped to viewport boundaries
+- [x] Render a line with exactly two bars
+- [x] Line width is configurable via series options
 
 ## Feature: Area Series Rendering
 
@@ -204,13 +204,9 @@ Checked 143 scenario(s) across 6 test file(s).
 - [ ] UNCOVERED: Watermark is configurable
 
 ---
-**73/143 scenarios covered.**
+**77/143 scenarios covered.**
 
-70 scenario(s) need tests:
-- Render a line connecting close prices
-- Line is clipped to viewport boundaries
-- Render a line with exactly two bars
-- Line width is configurable via series options
+66 scenario(s) need tests:
 - Render an area fill below the line
 - Area gradient fill
 - Area render with a single bar

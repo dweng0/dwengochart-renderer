@@ -4,9 +4,9 @@ This file provides guidance to Claude Code when working in this repository.
 
 ## What This Is
 
-`@dwengochart/renderer` — a TypeScript canvas rendering library for financial charts. Part of the [dwengochart](https://github.com/dweng0/dwengochart) ecosystem.
+`@dwengochart/renderer` — a TypeScript SVG rendering library for financial charts, built with D3.js. Part of the [dwengochart](https://github.com/dweng0/dwengochart) ecosystem.
 
-It listens to state change events from `@dwengochart/core` via `@yatamazuki/typed-eventbus` and draws series (candlestick, line, area, OHLC bar), axes, gridlines, crosshairs, volume histograms, and interaction overlays onto an HTML Canvas. Handles coordinate mapping, user interactions (pan, zoom, crosshair), theming, and responsive resizing.
+It listens to state change events from `@dwengochart/core` via `@yatamazuki/typed-eventbus` and renders series (candlestick, line, area, OHLC bar), axes, gridlines, crosshairs, volume histograms, and interaction overlays as SVG elements via D3.js. Handles coordinate mapping using D3 scales, user interactions (pan, zoom, crosshair), theming via SVG attributes/CSS, and responsive resizing. Series renderers are modular and composable — multiple series can be layered in the same chart.
 
 ## Key Files
 
@@ -61,7 +61,7 @@ When the user asks to "evolve", "run an evolution session", or "implement the ne
 
 This package is part of a three-package ecosystem:
 - **`@dwengochart/core`** — state, data models, datafeed contract
-- **`@dwengochart/renderer`** (this repo) — canvas drawing, interactions, theming
+- **`@dwengochart/renderer`** (this repo) — SVG/D3.js rendering, interactions, theming
 - **`@dwengochart/widget`** — TradingView-compatible API facade
 
 Packages communicate via `@yatamazuki/typed-eventbus`. Renderer listens to core events and emits interaction events. It never imports core directly.

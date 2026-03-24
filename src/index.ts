@@ -3,9 +3,11 @@
 
 import { EventBus } from '@yatamazuki/typed-eventbus';
 import { scaleLinear, scaleLog } from 'd3-scale';
+import { line } from 'd3-shape';
 
 export interface SeriesOptions {
   color?: string;
+  strokeWidth?: number;
   [key: string]: unknown;
 }
 
@@ -138,6 +140,9 @@ export class Renderer {
         group.setAttribute('data-type', payload.type);
         if (payload.options?.color) {
           group.setAttribute('data-color', payload.options.color as string);
+        }
+        if (payload.options?.strokeWidth !== undefined) {
+          group.setAttribute('data-stroke-width', String(payload.options.strokeWidth));
         }
         this.seriesLayer.appendChild(group);
       }),
@@ -304,6 +309,12 @@ export class Renderer {
       slotWidth = this.viewWidth;
     }
 
+    if (type === 'line') {
+      const strokeWidth = parseFloat(group.getAttribute('data-stroke-width') ?? '1');
+      this.renderLineSeries(group, visible, strokeWidth);
+      return;
+    }
+
     for (const bar of visible) {
       const barEl = document.createElementNS('http://www.w3.org/2000/svg', 'g');
       barEl.setAttribute('class', 'bar');
@@ -319,6 +330,57 @@ export class Renderer {
 
       group.appendChild(barEl);
     }
+  }
+
+  private renderLineSeries(group: Element, bars: Bar[], strokeWidth: number): void {
+    if (bars.length === 0) return;
+
+    const seriesId = group.getAttribute('data-series-id') ?? 'series';
+    const clipId = `line-clip-${seriesId}`;
+
+    // Ensure clipPath exists in SVG for viewport clipping
+    let clipPath = this.svg.querySelector(`#${clipId}`) as SVGClipPathElement | null;
+    if (!clipPath) {
+      clipPath = document.createElementNS('http://www.w3.org/2000/svg', 'clipPath') as SVGClipPathElement;
+      clipPath.setAttribute('id', clipId);
+      this.svg.insertBefore(clipPath, this.svg.firstChild);
+    }
+    while (clipPath.firstChild) clipPath.removeChild(clipPath.firstChild);
+    const [xMin, xMax] = this.scaleX.range() as [number, number];
+    const yRange = this.scaleY.range() as [number, number];
+    const yMin = Math.min(...yRange);
+    const yMax = Math.max(...yRange);
+    const clipRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    clipRect.setAttribute('x', String(xMin));
+    clipRect.setAttribute('y', String(yMin));
+    clipRect.setAttribute('width', String(xMax - xMin));
+    clipRect.setAttribute('height', String(yMax - yMin));
+    clipPath.appendChild(clipRect);
+
+    if (bars.length === 1) {
+      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      circle.setAttribute('cx', String(this.scaleX(bars[0].time)));
+      circle.setAttribute('cy', String(this.mapPriceToY(bars[0].close)));
+      circle.setAttribute('r', String(strokeWidth + 1));
+      circle.setAttribute('clip-path', `url(#${clipId})`);
+      group.appendChild(circle);
+      return;
+    }
+
+    const lineGen = line<Bar>()
+      .x((b: Bar) => this.scaleX(b.time))
+      .y((b: Bar) => this.mapPriceToY(b.close));
+
+    const d = lineGen(bars);
+    if (!d) return;
+
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', d);
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke', 'currentColor');
+    path.setAttribute('stroke-width', String(strokeWidth));
+    path.setAttribute('clip-path', `url(#${clipId})`);
+    group.appendChild(path);
   }
 
   private renderCandlestickBar(barEl: SVGGElement, bar: Bar, slotWidth: number): void {
