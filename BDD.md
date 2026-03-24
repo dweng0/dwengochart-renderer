@@ -926,3 +926,40 @@ System: A TypeScript SVG rendering library for financial charts, built with D3.j
             Given the renderer is configured with watermark disabled
             When a "symbol:resolved" event is received
             Then no watermark text element should exist in the SVG
+
+    Feature: Bar Labels
+        As a developer
+        I want to attach optional labels to individual bars
+        So that contextual annotations (e.g. earnings, dividends) can be shown on hover
+
+        Background:
+            Given the renderer is initialized with showLabels: true
+            And a series "s1" of type "candlestick" exists with viewport [0, 400] / [90, 120]
+
+        Scenario: Display label indicator on labeled bar
+            Given bar data includes a bar at time=100 with label { text: "Earnings", background: "#f0c040", color: "#000" }
+            When the series data is rendered
+            Then a label indicator element should appear in the series group for that bar
+
+        Scenario: Hide label indicators when showLabels is disabled
+            Given the renderer is initialized with showLabels: false
+            And bar data includes a bar at time=100 with a label
+            When the series data is rendered
+            Then no label indicator element should appear for that bar
+
+        Scenario: Show label text with background in crosshair tooltip
+            Given bar data includes a bar at time=100 with label { text: "Earnings", background: "#f0c040", color: "#000" }
+            When the crosshair hovers over that bar
+            Then the crosshair tooltip should contain the label text "Earnings"
+            And a background rect should be present behind the label text
+
+        Scenario: Label background color comes from bar data
+            Given bar data includes a bar at time=100 with label { text: "Buy signal", background: "#26a69a", color: "#fff" }
+            When the crosshair hovers over that bar
+            Then the label tooltip background rect should have fill="#26a69a"
+            And the label text element should have fill="#fff"
+
+        Scenario: Bars without labels show no indicator
+            Given bar data includes bars with no label property
+            When the series data is rendered
+            Then no label indicator elements should appear in the series group

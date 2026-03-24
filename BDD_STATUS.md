@@ -1,6 +1,6 @@
 # BDD Status
 
-Checked 143 scenario(s) across 18 test file(s).
+Checked 148 scenario(s) across 19 test file(s).
 
 
 ## Feature: Event Contract
@@ -203,5 +203,13 @@ Checked 143 scenario(s) across 18 test file(s).
 - [x] Watermark is behind all chart elements
 - [x] Watermark is configurable
 
+## Feature: Bar Labels
+
+- [x] Display label indicator on labeled bar
+- [x] Hide label indicators when showLabels is disabled
+- [x] Show label text with background in crosshair tooltip
+- [x] Label background color comes from bar data
+- [x] Bars without labels show no indicator
+
 ---
-**143/143 scenarios covered.**
+**148/148 scenarios covered.**

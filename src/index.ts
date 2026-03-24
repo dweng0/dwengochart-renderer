@@ -16,6 +16,12 @@ export interface SeriesOptions {
   [key: string]: unknown;
 }
 
+export interface BarLabel {
+  text: string;
+  color?: string;
+  background?: string;
+}
+
 export interface Bar {
   time: number;
   open: number;
@@ -23,6 +29,7 @@ export interface Bar {
   low: number;
   close: number;
   volume?: number;
+  label?: BarLabel;
 }
 
 export interface SymbolInfo {
@@ -74,6 +81,7 @@ export type RendererEvents = {
 
 export interface RendererOptions {
   watermark?: boolean;
+  showLabels?: boolean;
 }
 
 export class Renderer {
@@ -87,6 +95,7 @@ export class Renderer {
   private seriesBars = new Map<string, Bar[]>();
   private watermarkEl: SVGTextElement;
   private watermarkEnabled: boolean;
+  private showLabels: boolean;
   private priceAxisEl: SVGGElement;
   private timeAxisEl: SVGGElement;
   private dragStartX: number | null = null;
@@ -122,6 +131,7 @@ export class Renderer {
   constructor(container: HTMLElement, eventbus: EventBus<RendererEvents>, options?: RendererOptions) {
     this.eventbus = eventbus;
     this.watermarkEnabled = options?.watermark !== false;
+    this.showLabels = options?.showLabels ?? false;
 
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('width', '100%');
@@ -496,6 +506,22 @@ export class Renderer {
       }
 
       group.appendChild(barEl);
+    }
+
+    // Label indicators (dots below the lowest wick for each labeled bar)
+    if (this.showLabels) {
+      for (const bar of visible) {
+        if (!bar.label) continue;
+        const cx = this.scaleX(bar.time);
+        const cy = this.mapPriceToY(bar.low) + 8;
+        const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        dot.setAttribute('data-label-indicator', '');
+        dot.setAttribute('cx', String(cx));
+        dot.setAttribute('cy', String(cy));
+        dot.setAttribute('r', '4');
+        dot.setAttribute('fill', bar.label.background ?? bar.label.color ?? '#f0c040');
+        group.appendChild(dot);
+      }
     }
   }
 
@@ -1028,6 +1054,35 @@ export class Renderer {
         t.textContent = line;
         ch.appendChild(t);
       });
+
+      // Label annotation tooltip (with background rect)
+      if (this.showLabels && b.label) {
+        const lbl = b.label;
+        const lblX = tooltipX;
+        const lblY = tooltipY + lines.length * 14 + 6;
+        const PAD = 4;
+        const FONT = 11;
+        const approxW = lbl.text.length * 6.5 + PAD * 2;
+
+        const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        bg.setAttribute('data-label-bg', '');
+        bg.setAttribute('x', String(lblX - PAD));
+        bg.setAttribute('y', String(lblY - FONT));
+        bg.setAttribute('width', String(approxW));
+        bg.setAttribute('height', String(FONT + PAD * 2));
+        bg.setAttribute('rx', '3');
+        bg.setAttribute('fill', lbl.background ?? '#f0c040');
+        ch.appendChild(bg);
+
+        const lt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        lt.setAttribute('data-label-text', '');
+        lt.setAttribute('x', String(lblX));
+        lt.setAttribute('y', String(lblY));
+        lt.setAttribute('font-size', String(FONT));
+        lt.setAttribute('fill', lbl.color ?? '#000');
+        lt.textContent = lbl.text;
+        ch.appendChild(lt);
+      }
     }
   }
 
