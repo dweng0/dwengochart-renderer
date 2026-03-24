@@ -178,6 +178,8 @@ export class Renderer {
       eventbus.on('series:type', (payload) => {
         const group = this.seriesLayer.querySelector(`[data-series-id="${payload.id}"]`);
         group?.setAttribute('data-type', payload.type);
+        const bars = this.seriesBars.get(payload.id) ?? [];
+        this.renderSeries(payload.id, bars);
       }),
       eventbus.on('series:show', (payload) => {
         const group = this.seriesLayer.querySelector(`[data-series-id="${payload.id}"]`);
@@ -395,10 +397,11 @@ export class Renderer {
     const d = lineGen(bars);
     if (!d) return;
 
+    const color = group.getAttribute('data-color') ?? 'currentColor';
     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     path.setAttribute('d', d);
     path.setAttribute('fill', 'none');
-    path.setAttribute('stroke', 'currentColor');
+    path.setAttribute('stroke', color);
     path.setAttribute('stroke-width', String(strokeWidth));
     path.setAttribute('clip-path', `url(#${clipId})`);
     group.appendChild(path);

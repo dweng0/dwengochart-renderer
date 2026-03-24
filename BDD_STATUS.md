@@ -1,6 +1,6 @@
 # BDD Status
 
-Checked 143 scenario(s) across 8 test file(s).
+Checked 143 scenario(s) across 9 test file(s).
 
 
 ## Feature: Event Contract
@@ -87,15 +87,15 @@ Checked 143 scenario(s) across 8 test file(s).
 
 ## Feature: Series Composition
 
-- [ ] UNCOVERED: Add a series via event
-- [ ] UNCOVERED: Overlay multiple series via events
-- [ ] UNCOVERED: Reorder series via series:order event
+- [x] Add a series via event
+- [x] Overlay multiple series via events
+- [x] Reorder series via series:order event
 - [x] Remove a series via event
 - [x] Show and hide a series via events
 - [x] Update series options via event
-- [ ] UNCOVERED: Each series has independent styling
-- [ ] UNCOVERED: Series re-renders on viewport:changed
-- [ ] UNCOVERED: Swap series type via event
+- [x] Each series has independent styling
+- [x] Series re-renders on viewport:changed
+- [x] Swap series type via event
 
 ## Feature: OHLC Bar Series Rendering
 
@@ -204,15 +204,9 @@ Checked 143 scenario(s) across 8 test file(s).
 - [ ] UNCOVERED: Watermark is configurable
 
 ---
-**82/143 scenarios covered.**
+**88/143 scenarios covered.**
 
-61 scenario(s) need tests:
-- Add a series via event
-- Overlay multiple series via events
-- Reorder series via series:order event
-- Each series has independent styling
-- Series re-renders on viewport:changed
-- Swap series type via event
+55 scenario(s) need tests:
 - Render volume bars below the price chart
 - Volume bar color matches candle direction
 - Volume area has its own y-scale
