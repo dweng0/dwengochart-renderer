@@ -214,6 +214,7 @@ export class Renderer {
           this.renderSeries(id, bars);
         }
         this.renderPriceAxis();
+        this.renderTimeAxis();
       }),
       eventbus.on('theme:changed', (payload) => {
         const { theme } = payload;
@@ -253,6 +254,7 @@ export class Renderer {
           this.timeAxisEl.setAttribute('data-timezone', payload.symbol.timezone);
         }
         this.renderPriceAxis();
+        this.renderTimeAxis();
       }),
       eventbus.on('series:remove', (payload) => {
         this.seriesBars.delete(payload.id);
@@ -538,6 +540,113 @@ export class Renderer {
         borderPath.setAttribute('stroke-width', borderWidth ?? '1');
         group.appendChild(borderPath);
       }
+    }
+  }
+
+  private renderTimeAxis(): void {
+    const axis = this.timeAxisEl;
+    while (axis.firstChild) axis.removeChild(axis.firstChild);
+
+    if (!this.viewportSet) return;
+
+    const [t0, t1] = this.scaleX.domain() as [number, number];
+    const rangeMs = t1 - t0;
+    const axisY = this.viewHeight - 4;
+
+    // Choose label interval and format based on range
+    const DAY = 24 * 60 * 60 * 1000;
+    const HOUR = 60 * 60 * 1000;
+    const MIN = 60 * 1000;
+
+    let interval: number;
+    let fmt: (t: number) => string;
+    let hierarchicalFmt: ((t: number) => string) | null = null;
+
+    if (rangeMs > 60 * DAY) {
+      // Monthly labels, hierarchical year labels
+      interval = 7 * DAY;
+      fmt = (t) => {
+        const d = new Date(t);
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      };
+      hierarchicalFmt = (t) => {
+        const d = new Date(t);
+        return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+      };
+    } else if (rangeMs > 7 * DAY) {
+      // Daily labels
+      interval = 3 * DAY;
+      fmt = (t) => {
+        const d = new Date(t);
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      };
+    } else if (rangeMs > DAY) {
+      // Daily with day-of-week
+      interval = DAY;
+      fmt = (t) => {
+        const d = new Date(t);
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      };
+    } else if (rangeMs > 4 * HOUR) {
+      // Hourly
+      interval = HOUR;
+      fmt = (t) => {
+        const d = new Date(t);
+        return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+      };
+    } else {
+      // Sub-hourly
+      interval = 30 * MIN;
+      fmt = (t) => {
+        const d = new Date(t);
+        return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+      };
+    }
+
+    // Generate tick times at interval boundaries
+    const startAligned = Math.ceil(t0 / interval) * interval;
+    const ticks: number[] = [];
+    for (let t = startAligned; t <= t1; t += interval) {
+      ticks.push(t);
+    }
+
+    const minLabelSpacing = 60; // min pixels between labels
+    let lastX = -Infinity;
+
+    // Track which ticks get "hierarchical" labels
+    const hierarchicalTicks = new Set<number>();
+    if (hierarchicalFmt) {
+      let lastMonth = -1;
+      for (const t of ticks) {
+        const d = new Date(t);
+        const month = d.getMonth();
+        if (month !== lastMonth) {
+          hierarchicalTicks.add(t);
+          lastMonth = month;
+        }
+      }
+    }
+
+    for (const t of ticks) {
+      const x = this.scaleX(t);
+      if (x < 0 || x > this.viewWidth) continue;
+      if (x - lastX < minLabelSpacing) continue;
+      lastX = x;
+
+      const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      label.setAttribute('x', String(Math.round(x)));
+      label.setAttribute('y', String(axisY));
+      label.setAttribute('text-anchor', 'middle');
+      label.setAttribute('font-size', '11');
+
+      if (hierarchicalTicks.has(t) && hierarchicalFmt) {
+        label.textContent = hierarchicalFmt(t);
+        label.setAttribute('font-weight', 'bold');
+      } else {
+        label.textContent = fmt(t);
+      }
+
+      axis.appendChild(label);
     }
   }
 

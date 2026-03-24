@@ -1,6 +1,6 @@
 # BDD Status
 
-Checked 143 scenario(s) across 11 test file(s).
+Checked 143 scenario(s) across 12 test file(s).
 
 
 ## Feature: Event Contract
@@ -127,13 +127,13 @@ Checked 143 scenario(s) across 11 test file(s).
 
 ## Feature: Time Axis Rendering
 
-- [ ] UNCOVERED: Render time labels for daily resolution
-- [ ] UNCOVERED: Render time labels for intraday resolution
-- [ ] UNCOVERED: Labels do not overlap
+- [x] Render time labels for daily resolution
+- [x] Render time labels for intraday resolution
+- [x] Labels do not overlap
 - [x] Handle gaps in time data (weekends/holidays)
 - [x] Display timezone from symbol:resolved
-- [ ] UNCOVERED: Configurable timezone override
-- [ ] UNCOVERED: Hierarchical time labels at boundary crossings
+- [x] Configurable timezone override
+- [x] Hierarchical time labels at boundary crossings
 
 ## Feature: Crosshair
 
@@ -204,14 +204,9 @@ Checked 143 scenario(s) across 11 test file(s).
 - [ ] UNCOVERED: Watermark is configurable
 
 ---
-**101/143 scenarios covered.**
+**106/143 scenarios covered.**
 
-42 scenario(s) need tests:
-- Render time labels for daily resolution
-- Render time labels for intraday resolution
-- Labels do not overlap
-- Configurable timezone override
-- Hierarchical time labels at boundary crossings
+37 scenario(s) need tests:
 - Snap crosshair to nearest bar
 - Hide crosshair when mouse leaves SVG
 - Crosshair tooltip shows OHLCV values
