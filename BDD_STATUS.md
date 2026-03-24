@@ -1,6 +1,6 @@
 # BDD Status
 
-Checked 143 scenario(s) across 15 test file(s).
+Checked 143 scenario(s) across 18 test file(s).
 
 
 ## Feature: Event Contract
@@ -169,59 +169,39 @@ Checked 143 scenario(s) across 15 test file(s).
 
 ## Feature: Theming
 
-- [ ] UNCOVERED: Apply a light theme via event
-- [ ] UNCOVERED: Apply a dark theme via event
-- [ ] UNCOVERED: Override individual theme properties
-- [ ] UNCOVERED: Switch theme without losing chart state
-- [ ] UNCOVERED: Custom font family in theme
-- [ ] UNCOVERED: Opacity settings for gridlines
+- [x] Apply a light theme via event
+- [x] Apply a dark theme via event
+- [x] Override individual theme properties
+- [x] Switch theme without losing chart state
+- [x] Custom font family in theme
+- [x] Opacity settings for gridlines
 
 ## Feature: Render Pipeline
 
-- [ ] UNCOVERED: Batch multiple events into one update
-- [ ] UNCOVERED: Skip rendering when nothing changed
-- [ ] UNCOVERED: Handle rapid successive events
-- [ ] UNCOVERED: RequestAnimationFrame integration
-- [ ] UNCOVERED: Pause rendering when tab is hidden
+- [x] Batch multiple events into one update
+- [x] Skip rendering when nothing changed
+- [x] Handle rapid successive events
+- [x] RequestAnimationFrame integration
+- [x] Pause rendering when tab is hidden
 
 ## Feature: Loading State
 
 - [x] Show loading indicator via chart:loading event
-- [ ] UNCOVERED: Show loading indicator at specific region
+- [x] Show loading indicator at specific region
 - [x] Hide loading indicator via chart:loading event
 
 ## Feature: Empty and Error States
 
-- [ ] UNCOVERED: Display error state via chart:error event
-- [ ] UNCOVERED: Clear error state via chart:error null
-- [ ] UNCOVERED: Display empty state when series has no data
+- [x] Display error state via chart:error event
+- [x] Clear error state via chart:error null
+- [x] Display empty state when series has no data
 
 ## Feature: Watermark
 
 - [x] Display symbol name from symbol:resolved event
-- [ ] UNCOVERED: Watermark updates on symbol:resolved event
-- [ ] UNCOVERED: Watermark is behind all chart elements
-- [ ] UNCOVERED: Watermark is configurable
+- [x] Watermark updates on symbol:resolved event
+- [x] Watermark is behind all chart elements
+- [x] Watermark is configurable
 
 ---
-**125/143 scenarios covered.**
-
-18 scenario(s) need tests:
-- Apply a light theme via event
-- Apply a dark theme via event
-- Override individual theme properties
-- Switch theme without losing chart state
-- Custom font family in theme
-- Opacity settings for gridlines
-- Batch multiple events into one update
-- Skip rendering when nothing changed
-- Handle rapid successive events
-- RequestAnimationFrame integration
-- Pause rendering when tab is hidden
-- Show loading indicator at specific region
-- Display error state via chart:error event
-- Clear error state via chart:error null
-- Display empty state when series has no data
-- Watermark updates on symbol:resolved event
-- Watermark is behind all chart elements
-- Watermark is configurable
+**143/143 scenarios covered.**
