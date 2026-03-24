@@ -27,4 +27,13 @@ describe('Event Contract', () => {
     expect(group).not.toBeNull();
     expect(group!.tagName.toLowerCase()).toBe('g');
   });
+
+  // listen_to_seriesremove_event
+  it('listen to series:remove event', () => {
+    eventbus.emit('series:add', { id: 's1', type: 'candlestick' });
+    expect(container.querySelector('[data-series-id="s1"]')).not.toBeNull();
+
+    eventbus.emit('series:remove', { id: 's1' });
+    expect(container.querySelector('[data-series-id="s1"]')).toBeNull();
+  });
 });

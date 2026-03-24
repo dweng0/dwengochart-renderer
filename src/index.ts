@@ -75,6 +75,10 @@ export class Renderer {
         group.setAttribute('data-series-id', payload.id);
         this.seriesLayer.appendChild(group);
       }),
+      eventbus.on('series:remove', (payload) => {
+        const group = this.seriesLayer.querySelector(`[data-series-id="${payload.id}"]`);
+        group?.remove();
+      }),
     );
   }
 
