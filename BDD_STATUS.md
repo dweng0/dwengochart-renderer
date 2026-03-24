@@ -10,7 +10,7 @@ Checked 143 scenario(s) across 2 test file(s).
 - [x] Listen to series:update event
 - [x] Listen to series:show event
 - [x] Listen to series:hide event
-- [ ] UNCOVERED: Listen to series:type event
+- [x] Listen to series:type event
 - [ ] UNCOVERED: Listen to series:order event
 - [ ] UNCOVERED: Listen to series:data event
 - [ ] UNCOVERED: Listen to viewport:changed event
@@ -204,10 +204,9 @@ Checked 143 scenario(s) across 2 test file(s).
 - [ ] UNCOVERED: Watermark is configurable
 
 ---
-**8/143 scenarios covered.**
+**9/143 scenarios covered.**
 
-135 scenario(s) need tests:
-- Listen to series:type event
+134 scenario(s) need tests:
 - Listen to series:order event
 - Listen to series:data event
 - Listen to viewport:changed event

@@ -73,6 +73,7 @@ export class Renderer {
       eventbus.on('series:add', (payload) => {
         const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         group.setAttribute('data-series-id', payload.id);
+        group.setAttribute('data-type', payload.type);
         if (payload.options?.color) {
           group.setAttribute('data-color', payload.options.color as string);
         }
@@ -84,6 +85,10 @@ export class Renderer {
         if (payload.options.color) {
           group.setAttribute('data-color', payload.options.color as string);
         }
+      }),
+      eventbus.on('series:type', (payload) => {
+        const group = this.seriesLayer.querySelector(`[data-series-id="${payload.id}"]`);
+        group?.setAttribute('data-type', payload.type);
       }),
       eventbus.on('series:show', (payload) => {
         const group = this.seriesLayer.querySelector(`[data-series-id="${payload.id}"]`);

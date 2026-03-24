@@ -38,6 +38,16 @@ describe('Event Contract', () => {
     expect(group.getAttribute('data-color')).toBe('blue');
   });
 
+  // listen_to_seriestype_event
+  it('listen to series:type event', () => {
+    eventbus.emit('series:add', { id: 's1', type: 'line' });
+    const group = container.querySelector('[data-series-id="s1"]') as SVGGElement;
+    expect(group.getAttribute('data-type')).toBe('line');
+
+    eventbus.emit('series:type', { id: 's1', type: 'area' });
+    expect(group.getAttribute('data-type')).toBe('area');
+  });
+
   // listen_to_seriesshow_event
   it('listen to series:show event', () => {
     eventbus.emit('series:add', { id: 's1', type: 'line' });
