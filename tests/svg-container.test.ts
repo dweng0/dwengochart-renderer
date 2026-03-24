@@ -53,7 +53,7 @@ describe('SVG Container Setup', () => {
     expect(svg!.getAttribute('height')).toBe('100%');
   });
 
-  // svgis_resolutionindependent
+  // svg_is_resolutionindependent
   it('svg is resolution-independent', () => {
     // No pixel buffer scaling regardless of device pixel ratio — viewBox stays as CSS pixels
     const svg = container.querySelector('svg')!;

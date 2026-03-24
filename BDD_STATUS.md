@@ -31,7 +31,7 @@ Checked 143 scenario(s) across 6 test file(s).
 ## Feature: SVG Container Setup
 
 - [x] Initialize SVG in a container
-- [ ] UNCOVERED: SVG is resolution-independent
+- [x] SVG is resolution-independent
 - [x] Respond to container resize
 - [x] Handle zero-size container gracefully
 - [x] Clean up on destroy
@@ -204,10 +204,9 @@ Checked 143 scenario(s) across 6 test file(s).
 - [ ] UNCOVERED: Watermark is configurable
 
 ---
-**72/143 scenarios covered.**
+**73/143 scenarios covered.**
 
-71 scenario(s) need tests:
-- SVG is resolution-independent
+70 scenario(s) need tests:
 - Render a line connecting close prices
 - Line is clipped to viewport boundaries
 - Render a line with exactly two bars
