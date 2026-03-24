@@ -2,6 +2,7 @@
 // SVG rendering library for financial charts
 
 import { EventBus } from '@yatamazuki/typed-eventbus';
+import { scaleLinear } from 'd3-scale';
 
 export interface SeriesOptions {
   color?: string;
@@ -52,10 +53,18 @@ export type RendererEvents = {
   'theme:changed': { theme: Theme };
 };
 
+// Default pixel dimensions (updated by resize handling in a later scenario)
+const DEFAULT_WIDTH = 800;
+const DEFAULT_HEIGHT = 600;
+
 export class Renderer {
   private svg: SVGSVGElement;
   private seriesLayer: SVGGElement;
   private unsubscribers: (() => void)[] = [];
+
+  private scaleX = scaleLinear().range([0, DEFAULT_WIDTH]);
+  private scaleY = scaleLinear().range([DEFAULT_HEIGHT, 0]);
+  private seriesBars = new Map<string, Bar[]>();
 
   constructor(container: HTMLElement, eventbus: EventBus<RendererEvents>) {
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -105,27 +114,45 @@ export class Renderer {
         group?.setAttribute('display', 'none');
       }),
       eventbus.on('series:data', (payload) => {
-        const group = this.seriesLayer.querySelector(`[data-series-id="${payload.id}"]`);
-        if (!group) return;
-        // Clear previous render
-        while (group.firstChild) group.removeChild(group.firstChild);
-        // Render one <g class="bar"> per bar (coordinates come later from viewport:changed)
-        for (const _bar of payload.bars) {
-          const barEl = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-          barEl.setAttribute('class', 'bar');
-          group.appendChild(barEl);
+        this.seriesBars.set(payload.id, payload.bars);
+        this.renderSeries(payload.id, payload.bars);
+      }),
+      eventbus.on('viewport:changed', (payload) => {
+        this.scaleX.domain(payload.timeRange);
+        this.scaleY.domain(payload.priceRange);
+        // Re-render all series with updated scales
+        for (const [id, bars] of this.seriesBars) {
+          this.renderSeries(id, bars);
         }
       }),
       eventbus.on('series:remove', (payload) => {
+        this.seriesBars.delete(payload.id);
         const group = this.seriesLayer.querySelector(`[data-series-id="${payload.id}"]`);
         group?.remove();
       }),
     );
   }
 
+  private renderSeries(id: string, bars: Bar[]): void {
+    const group = this.seriesLayer.querySelector(`[data-series-id="${id}"]`);
+    if (!group) return;
+    while (group.firstChild) group.removeChild(group.firstChild);
+    for (const bar of bars) {
+      const barEl = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      barEl.setAttribute('class', 'bar');
+      barEl.setAttribute('data-x', String(Math.round(this.scaleX(bar.time))));
+      barEl.setAttribute('data-y-open', String(Math.round(this.scaleY(bar.open))));
+      barEl.setAttribute('data-y-close', String(Math.round(this.scaleY(bar.close))));
+      barEl.setAttribute('data-y-high', String(Math.round(this.scaleY(bar.high))));
+      barEl.setAttribute('data-y-low', String(Math.round(this.scaleY(bar.low))));
+      group.appendChild(barEl);
+    }
+  }
+
   destroy(): void {
     this.unsubscribers.forEach((fn) => fn());
     this.unsubscribers = [];
+    this.seriesBars.clear();
     this.svg.remove();
   }
 }

@@ -13,7 +13,7 @@ Checked 143 scenario(s) across 2 test file(s).
 - [x] Listen to series:type event
 - [x] Listen to series:order event
 - [x] Listen to series:data event
-- [ ] UNCOVERED: Listen to viewport:changed event
+- [x] Listen to viewport:changed event
 - [ ] UNCOVERED: Listen to symbol:resolved event for watermark and metadata
 - [ ] UNCOVERED: Listen to chart:loading event
 - [ ] UNCOVERED: Listen to chart:error event
@@ -60,7 +60,7 @@ Checked 143 scenario(s) across 2 test file(s).
 - [ ] UNCOVERED: Render a bearish candle
 - [ ] UNCOVERED: Render a doji (open equals close)
 - [ ] UNCOVERED: Render only visible bars
-- [ ] UNCOVERED: Render with no bars
+- [x] Render with no bars
 - [ ] UNCOVERED: Render a single bar
 - [ ] UNCOVERED: Scale candle width based on viewport
 - [ ] UNCOVERED: Handle bars with zero range (all OHLC values equal)
@@ -71,7 +71,7 @@ Checked 143 scenario(s) across 2 test file(s).
 
 - [ ] UNCOVERED: Render a line connecting close prices
 - [ ] UNCOVERED: Render with a single bar
-- [ ] UNCOVERED: Render with no bars
+- [x] Render with no bars
 - [ ] UNCOVERED: Line is clipped to viewport boundaries
 - [ ] UNCOVERED: Render a line with exactly two bars
 - [ ] UNCOVERED: Line width is configurable via series options
@@ -80,7 +80,7 @@ Checked 143 scenario(s) across 2 test file(s).
 
 - [ ] UNCOVERED: Render an area fill below the line
 - [ ] UNCOVERED: Area gradient fill
-- [ ] UNCOVERED: Area render with no bars
+- [x] Area render with no bars
 - [ ] UNCOVERED: Area render with a single bar
 - [ ] UNCOVERED: Baseline area fill from a specific price
 - [ ] UNCOVERED: Area border line is configurable
@@ -204,10 +204,9 @@ Checked 143 scenario(s) across 2 test file(s).
 - [ ] UNCOVERED: Watermark is configurable
 
 ---
-**11/143 scenarios covered.**
+**15/143 scenarios covered.**
 
-132 scenario(s) need tests:
-- Listen to viewport:changed event
+128 scenario(s) need tests:
 - Listen to symbol:resolved event for watermark and metadata
 - Listen to chart:loading event
 - Listen to chart:error event
@@ -245,7 +244,6 @@ Checked 143 scenario(s) across 2 test file(s).
 - Render a bearish candle
 - Render a doji (open equals close)
 - Render only visible bars
-- Render with no bars
 - Render a single bar
 - Scale candle width based on viewport
 - Handle bars with zero range (all OHLC values equal)
@@ -253,13 +251,11 @@ Checked 143 scenario(s) across 2 test file(s).
 - Wick is centered and single-pixel wide
 - Render a line connecting close prices
 - Render with a single bar
-- Render with no bars
 - Line is clipped to viewport boundaries
 - Render a line with exactly two bars
 - Line width is configurable via series options
 - Render an area fill below the line
 - Area gradient fill
-- Area render with no bars
 - Area render with a single bar
 - Baseline area fill from a specific price
 - Area border line is configurable

@@ -38,6 +38,27 @@ describe('Event Contract', () => {
     expect(group.getAttribute('data-color')).toBe('blue');
   });
 
+  // listen_to_viewportchanged_event
+  it('listen to viewport:changed event', () => {
+    eventbus.emit('series:add', { id: 's1', type: 'candlestick' });
+    eventbus.emit('series:data', {
+      id: 's1',
+      bars: [
+        { time: 1000, open: 100, high: 110, low: 90, close: 105 },
+        { time: 5000, open: 105, high: 115, low: 95, close: 98 },
+      ],
+    });
+
+    eventbus.emit('viewport:changed', { timeRange: [1000, 5000], priceRange: [50, 150] });
+
+    // Scales are updated — bars should be re-rendered with mapped coordinates
+    const group = container.querySelector('[data-series-id="s1"]')!;
+    const bars = group.querySelectorAll('.bar');
+    expect(bars.length).toBe(2);
+    // First bar at time=1000 should map to x=0 (start of range)
+    expect(bars[0].getAttribute('data-x')).toBe('0');
+  });
+
   // listen_to_seriesdata_event
   it('listen to series:data event', () => {
     eventbus.emit('series:add', { id: 's1', type: 'candlestick' });
