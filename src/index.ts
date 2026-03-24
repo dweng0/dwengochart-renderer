@@ -85,6 +85,7 @@ export class Renderer {
   private margins = { left: 0, right: 0, top: 0, bottom: 0 };
   private currentPriceScale: 'linear' | 'logarithmic' | 'percentage' = 'linear';
   private basePrice = 1;
+  private viewportSet = false;
 
   constructor(container: HTMLElement, eventbus: EventBus<RendererEvents>) {
     this.eventbus = eventbus;
@@ -170,6 +171,7 @@ export class Renderer {
         this.renderSeries(payload.id, payload.bars);
       }),
       eventbus.on('viewport:changed', (payload) => {
+        this.viewportSet = true;
         this.currentPriceScale = payload.priceScale ?? 'linear';
         this.basePrice = payload.basePrice ?? 1;
         this.scaleX.domain(payload.timeRange);
@@ -286,15 +288,84 @@ export class Renderer {
     const group = this.seriesLayer.querySelector(`[data-series-id="${id}"]`);
     if (!group) return;
     while (group.firstChild) group.removeChild(group.firstChild);
-    for (const bar of bars) {
+
+    const type = group.getAttribute('data-type') ?? 'line';
+    const [t0, t1] = this.scaleX.domain() as [number, number];
+    const visible = this.viewportSet
+      ? bars.filter((b) => b.time >= t0 && b.time <= t1)
+      : bars;
+
+    // Calculate candle slot width from bar time spacing
+    let slotWidth = this.viewWidth;
+    if (bars.length >= 2) {
+      const dt = bars[1].time - bars[0].time;
+      slotWidth = Math.abs(this.scaleX(t0 + dt) - this.scaleX(t0));
+    } else if (visible.length === 1) {
+      slotWidth = this.viewWidth;
+    }
+
+    for (const bar of visible) {
       const barEl = document.createElementNS('http://www.w3.org/2000/svg', 'g');
       barEl.setAttribute('class', 'bar');
       barEl.setAttribute('data-x', String(Math.round(this.scaleX(bar.time))));
-      barEl.setAttribute('data-y-open', String(Math.round(this.scaleY(bar.open))));
-      barEl.setAttribute('data-y-close', String(Math.round(this.scaleY(bar.close))));
-      barEl.setAttribute('data-y-high', String(Math.round(this.scaleY(bar.high))));
-      barEl.setAttribute('data-y-low', String(Math.round(this.scaleY(bar.low))));
+      barEl.setAttribute('data-y-open', String(Math.round(this.mapPriceToY(bar.open))));
+      barEl.setAttribute('data-y-close', String(Math.round(this.mapPriceToY(bar.close))));
+      barEl.setAttribute('data-y-high', String(Math.round(this.mapPriceToY(bar.high))));
+      barEl.setAttribute('data-y-low', String(Math.round(this.mapPriceToY(bar.low))));
+
+      if (type === 'candlestick') {
+        this.renderCandlestickBar(barEl, bar, slotWidth);
+      }
+
       group.appendChild(barEl);
+    }
+  }
+
+  private renderCandlestickBar(barEl: SVGGElement, bar: Bar, slotWidth: number): void {
+    const GAP = 0.2;
+    const candleWidth = Math.max(1, slotWidth * (1 - GAP));
+    const cx = this.scaleX(bar.time);
+    const bodyX = cx - candleWidth / 2;
+
+    const isDoji = bar.open === bar.close;
+    const isBullish = bar.close > bar.open;
+    const color = isBullish ? '#26a69a' : '#ef5350';
+
+    const yHigh = this.mapPriceToY(bar.high);
+    const yLow = this.mapPriceToY(bar.low);
+    const yOpen = this.mapPriceToY(bar.open);
+    const yClose = this.mapPriceToY(bar.close);
+    const yBodyTop = Math.min(yOpen, yClose);
+    const yBodyBottom = Math.max(yOpen, yClose);
+
+    const mkLine = (x1: number, y1: number, x2: number, y2: number, stroke = color) => {
+      const el = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      el.setAttribute('x1', String(x1));  el.setAttribute('y1', String(y1));
+      el.setAttribute('x2', String(x2));  el.setAttribute('y2', String(y2));
+      el.setAttribute('stroke', stroke);
+      el.setAttribute('stroke-width', '1');
+      return el;
+    };
+
+    if (isDoji) {
+      // Horizontal body line + wicks
+      barEl.appendChild(mkLine(bodyX, yOpen, bodyX + candleWidth, yOpen, '#888'));
+      barEl.appendChild(mkLine(cx, yHigh, cx, yOpen));
+      barEl.appendChild(mkLine(cx, yOpen, cx, yLow));
+    } else {
+      // Body rect
+      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      rect.setAttribute('x', String(bodyX));
+      rect.setAttribute('y', String(yBodyTop));
+      rect.setAttribute('width', String(candleWidth));
+      rect.setAttribute('height', String(Math.max(1, yBodyBottom - yBodyTop)));
+      rect.setAttribute('fill', color);
+      rect.setAttribute('data-direction', isBullish ? 'bullish' : 'bearish');
+      barEl.appendChild(rect);
+      // Upper wick
+      barEl.appendChild(mkLine(cx, yHigh, cx, yBodyTop));
+      // Lower wick
+      barEl.appendChild(mkLine(cx, yBodyBottom, cx, yLow));
     }
   }
 

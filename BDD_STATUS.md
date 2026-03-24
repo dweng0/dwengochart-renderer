@@ -1,6 +1,6 @@
 # BDD Status
 
-Checked 143 scenario(s) across 5 test file(s).
+Checked 143 scenario(s) across 6 test file(s).
 
 
 ## Feature: Event Contract
@@ -56,21 +56,21 @@ Checked 143 scenario(s) across 5 test file(s).
 
 ## Feature: Candlestick Series Rendering
 
-- [ ] UNCOVERED: Render a bullish candle
-- [ ] UNCOVERED: Render a bearish candle
-- [ ] UNCOVERED: Render a doji (open equals close)
-- [ ] UNCOVERED: Render only visible bars
+- [x] Render a bullish candle
+- [x] Render a bearish candle
+- [x] Render a doji (open equals close)
+- [x] Render only visible bars
 - [x] Render with no bars
-- [ ] UNCOVERED: Render a single bar
-- [ ] UNCOVERED: Scale candle width based on viewport
-- [ ] UNCOVERED: Handle bars with zero range (all OHLC values equal)
-- [ ] UNCOVERED: Enforce minimum candle width at extreme zoom-out
-- [ ] UNCOVERED: Wick is centered and single-pixel wide
+- [x] Render a single bar
+- [x] Scale candle width based on viewport
+- [x] Handle bars with zero range (all OHLC values equal)
+- [x] Enforce minimum candle width at extreme zoom-out
+- [x] Wick is centered and single-pixel wide
 
 ## Feature: Line Series Rendering
 
 - [ ] UNCOVERED: Render a line connecting close prices
-- [ ] UNCOVERED: Render with a single bar
+- [x] Render with a single bar
 - [x] Render with no bars
 - [ ] UNCOVERED: Line is clipped to viewport boundaries
 - [ ] UNCOVERED: Render a line with exactly two bars
@@ -99,9 +99,9 @@ Checked 143 scenario(s) across 5 test file(s).
 
 ## Feature: OHLC Bar Series Rendering
 
-- [ ] UNCOVERED: Render a bullish OHLC bar
-- [ ] UNCOVERED: Render a bearish OHLC bar
-- [ ] UNCOVERED: Render OHLC bar with no bars
+- [x] Render a bullish OHLC bar
+- [x] Render a bearish OHLC bar
+- [x] Render OHLC bar with no bars
 
 ## Feature: Volume Histogram
 
@@ -110,7 +110,7 @@ Checked 143 scenario(s) across 5 test file(s).
 - [ ] UNCOVERED: Volume area has its own y-scale
 - [ ] UNCOVERED: Volume area height is configurable
 - [ ] UNCOVERED: Hide volume when series is removed
-- [ ] UNCOVERED: Handle bars with zero volume
+- [x] Handle bars with zero volume
 
 ## Feature: Price Axis Rendering
 
@@ -130,7 +130,7 @@ Checked 143 scenario(s) across 5 test file(s).
 - [ ] UNCOVERED: Render time labels for daily resolution
 - [ ] UNCOVERED: Render time labels for intraday resolution
 - [ ] UNCOVERED: Labels do not overlap
-- [ ] UNCOVERED: Handle gaps in time data (weekends/holidays)
+- [x] Handle gaps in time data (weekends/holidays)
 - [x] Display timezone from symbol:resolved
 - [ ] UNCOVERED: Configurable timezone override
 - [ ] UNCOVERED: Hierarchical time labels at boundary crossings
@@ -204,21 +204,11 @@ Checked 143 scenario(s) across 5 test file(s).
 - [ ] UNCOVERED: Watermark is configurable
 
 ---
-**57/143 scenarios covered.**
+**72/143 scenarios covered.**
 
-86 scenario(s) need tests:
+71 scenario(s) need tests:
 - SVG is resolution-independent
-- Render a bullish candle
-- Render a bearish candle
-- Render a doji (open equals close)
-- Render only visible bars
-- Render a single bar
-- Scale candle width based on viewport
-- Handle bars with zero range (all OHLC values equal)
-- Enforce minimum candle width at extreme zoom-out
-- Wick is centered and single-pixel wide
 - Render a line connecting close prices
-- Render with a single bar
 - Line is clipped to viewport boundaries
 - Render a line with exactly two bars
 - Line width is configurable via series options
@@ -233,15 +223,11 @@ Checked 143 scenario(s) across 5 test file(s).
 - Each series has independent styling
 - Series re-renders on viewport:changed
 - Swap series type via event
-- Render a bullish OHLC bar
-- Render a bearish OHLC bar
-- Render OHLC bar with no bars
 - Render volume bars below the price chart
 - Volume bar color matches candle direction
 - Volume area has its own y-scale
 - Volume area height is configurable
 - Hide volume when series is removed
-- Handle bars with zero volume
 - Render price axis labels at sensible intervals
 - Handle very small price range
 - Handle very large price range
@@ -253,7 +239,6 @@ Checked 143 scenario(s) across 5 test file(s).
 - Render time labels for daily resolution
 - Render time labels for intraday resolution
 - Labels do not overlap
-- Handle gaps in time data (weekends/holidays)
 - Configurable timezone override
 - Hierarchical time labels at boundary crossings
 - Snap crosshair to nearest bar
