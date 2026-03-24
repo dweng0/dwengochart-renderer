@@ -1,6 +1,6 @@
 # BDD Status
 
-Checked 143 scenario(s) across 2 test file(s).
+Checked 143 scenario(s) across 4 test file(s).
 
 
 ## Feature: Event Contract
@@ -30,15 +30,15 @@ Checked 143 scenario(s) across 2 test file(s).
 
 ## Feature: SVG Container Setup
 
-- [ ] UNCOVERED: Initialize SVG in a container
+- [x] Initialize SVG in a container
 - [ ] UNCOVERED: SVG is resolution-independent
-- [ ] UNCOVERED: Respond to container resize
-- [ ] UNCOVERED: Handle zero-size container gracefully
-- [ ] UNCOVERED: Clean up on destroy
-- [ ] UNCOVERED: Initialize in a container with existing children
-- [ ] UNCOVERED: Handle container resize to zero
-- [ ] UNCOVERED: SVG has correct namespace
-- [ ] UNCOVERED: SVG contains layer groups in correct order
+- [x] Respond to container resize
+- [x] Handle zero-size container gracefully
+- [x] Clean up on destroy
+- [x] Initialize in a container with existing children
+- [x] Handle container resize to zero
+- [x] SVG has correct namespace
+- [x] SVG contains layer groups in correct order
 
 ## Feature: Coordinate Mapping
 
@@ -204,18 +204,10 @@ Checked 143 scenario(s) across 2 test file(s).
 - [ ] UNCOVERED: Watermark is configurable
 
 ---
-**37/143 scenarios covered.**
+**45/143 scenarios covered.**
 
-106 scenario(s) need tests:
-- Initialize SVG in a container
+98 scenario(s) need tests:
 - SVG is resolution-independent
-- Respond to container resize
-- Handle zero-size container gracefully
-- Clean up on destroy
-- Initialize in a container with existing children
-- Handle container resize to zero
-- SVG has correct namespace
-- SVG contains layer groups in correct order
 - Map time to x-pixel
 - Map x-pixel to time
 - Map price to y-pixel

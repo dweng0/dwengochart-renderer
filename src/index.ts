@@ -64,17 +64,14 @@ export type RendererEvents = {
   'renderer:destroyed': Record<string, never>;
 };
 
-// Default pixel dimensions (updated by resize handling in a later scenario)
-const DEFAULT_WIDTH = 800;
-const DEFAULT_HEIGHT = 600;
 
 export class Renderer {
   private svg: SVGSVGElement;
   private seriesLayer: SVGGElement;
   private unsubscribers: (() => void)[] = [];
 
-  private scaleX = scaleLinear().range([0, DEFAULT_WIDTH]);
-  private scaleY = scaleLinear().range([DEFAULT_HEIGHT, 0]);
+  private scaleX = scaleLinear();
+  private scaleY = scaleLinear();
   private seriesBars = new Map<string, Bar[]>();
   private watermarkEl: SVGTextElement;
   private priceAxisEl: SVGGElement;
@@ -82,6 +79,7 @@ export class Renderer {
   private dragStartX: number | null = null;
   private domListeners: Array<{ el: Element; type: string; fn: EventListener }> = [];
   private eventbus: EventBus<RendererEvents>;
+  private resizeObserver: ResizeObserver;
 
   constructor(container: HTMLElement, eventbus: EventBus<RendererEvents>) {
     this.eventbus = eventbus;
@@ -90,6 +88,19 @@ export class Renderer {
     svg.setAttribute('height', '100%');
     container.appendChild(svg);
     this.svg = svg;
+
+    // Set initial viewBox from container size
+    const { width, height } = container.getBoundingClientRect();
+    this.updateSize(width || 0, height || 0);
+
+    // Watch for container resize
+    this.resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width: w, height: h } = entry.contentRect;
+        this.updateSize(w, h);
+      }
+    });
+    this.resizeObserver.observe(container);
 
     const seriesLayer = document.createElementNS('http://www.w3.org/2000/svg', 'g');
     seriesLayer.setAttribute('class', 'series-layer');
@@ -204,6 +215,16 @@ export class Renderer {
     );
   }
 
+  private updateSize(width: number, height: number): void {
+    this.svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+    this.scaleX.range([0, width]);
+    this.scaleY.range([height, 0]);
+    // Re-render all series with new scale ranges
+    for (const [id, bars] of this.seriesBars) {
+      this.renderSeries(id, bars);
+    }
+  }
+
   private renderSeries(id: string, bars: Bar[]): void {
     const group = this.seriesLayer.querySelector(`[data-series-id="${id}"]`);
     if (!group) return;
@@ -279,6 +300,7 @@ export class Renderer {
   }
 
   destroy(): void {
+    this.resizeObserver.disconnect();
     for (const { el, type, fn } of this.domListeners) {
       el.removeEventListener(type, fn);
     }
