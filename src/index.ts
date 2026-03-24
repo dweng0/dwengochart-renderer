@@ -143,6 +143,26 @@ export class Renderer {
           this.renderSeries(id, bars);
         }
       }),
+      eventbus.on('chart:loading', (payload) => {
+        const existing = this.svg.querySelector('.loading-indicator');
+        if (payload.loading && !existing) {
+          const el = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+          el.setAttribute('class', 'loading-indicator');
+          this.svg.appendChild(el);
+        } else if (!payload.loading && existing) {
+          existing.remove();
+        }
+      }),
+      eventbus.on('chart:error', (payload) => {
+        const existing = this.svg.querySelector('.error-message');
+        existing?.remove();
+        if (payload) {
+          const el = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          el.setAttribute('class', 'error-message');
+          el.textContent = payload.message;
+          this.svg.appendChild(el);
+        }
+      }),
       eventbus.on('symbol:resolved', (payload) => {
         this.watermarkEl.textContent = payload.symbol.name;
         if (payload.symbol.currency_code) {

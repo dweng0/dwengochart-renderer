@@ -15,8 +15,8 @@ Checked 143 scenario(s) across 2 test file(s).
 - [x] Listen to series:data event
 - [x] Listen to viewport:changed event
 - [x] Listen to symbol:resolved event for watermark and metadata
-- [ ] UNCOVERED: Listen to chart:loading event
-- [ ] UNCOVERED: Listen to chart:error event
+- [x] Listen to chart:loading event
+- [x] Listen to chart:error event
 - [ ] UNCOVERED: Listen to theme:changed event
 - [ ] UNCOVERED: Emit interaction:crosshair event
 - [ ] UNCOVERED: Emit interaction:click event
@@ -186,9 +186,9 @@ Checked 143 scenario(s) across 2 test file(s).
 
 ## Feature: Loading State
 
-- [ ] UNCOVERED: Show loading indicator via chart:loading event
+- [x] Show loading indicator via chart:loading event
 - [ ] UNCOVERED: Show loading indicator at specific region
-- [ ] UNCOVERED: Hide loading indicator via chart:loading event
+- [x] Hide loading indicator via chart:loading event
 
 ## Feature: Empty and Error States
 
@@ -204,11 +204,9 @@ Checked 143 scenario(s) across 2 test file(s).
 - [ ] UNCOVERED: Watermark is configurable
 
 ---
-**19/143 scenarios covered.**
+**23/143 scenarios covered.**
 
-124 scenario(s) need tests:
-- Listen to chart:loading event
-- Listen to chart:error event
+120 scenario(s) need tests:
 - Listen to theme:changed event
 - Emit interaction:crosshair event
 - Emit interaction:click event
@@ -322,9 +320,7 @@ Checked 143 scenario(s) across 2 test file(s).
 - Handle rapid successive events
 - RequestAnimationFrame integration
 - Pause rendering when tab is hidden
-- Show loading indicator via chart:loading event
 - Show loading indicator at specific region
-- Hide loading indicator via chart:loading event
 - Display error state via chart:error event
 - Clear error state via chart:error null
 - Display empty state when series has no data

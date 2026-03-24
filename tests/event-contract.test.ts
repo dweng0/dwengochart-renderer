@@ -38,6 +38,26 @@ describe('Event Contract', () => {
     expect(group.getAttribute('data-color')).toBe('blue');
   });
 
+  // listen_to_chartloading_event
+  it('listen to chart:loading event', () => {
+    eventbus.emit('chart:loading', { loading: true });
+    expect(container.querySelector('.loading-indicator')).not.toBeNull();
+
+    eventbus.emit('chart:loading', { loading: false });
+    expect(container.querySelector('.loading-indicator')).toBeNull();
+  });
+
+  // listen_to_charterror_event
+  it('listen to chart:error event', () => {
+    eventbus.emit('chart:error', { message: 'Failed to load' });
+    const errorEl = container.querySelector('.error-message');
+    expect(errorEl).not.toBeNull();
+    expect(errorEl!.textContent).toBe('Failed to load');
+
+    eventbus.emit('chart:error', null);
+    expect(container.querySelector('.error-message')).toBeNull();
+  });
+
   // listen_to_symbolresolved_event_for_watermark_and_metadata
   it('listen to symbol:resolved event for watermark and metadata', () => {
     eventbus.emit('symbol:resolved', {
