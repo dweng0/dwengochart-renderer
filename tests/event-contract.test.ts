@@ -28,6 +28,16 @@ describe('Event Contract', () => {
     expect(group!.tagName.toLowerCase()).toBe('g');
   });
 
+  // listen_to_seriesupdate_event
+  it('listen to series:update event', () => {
+    eventbus.emit('series:add', { id: 's1', type: 'line', options: { color: 'green' } });
+    const group = container.querySelector('[data-series-id="s1"]') as SVGGElement;
+    expect(group.getAttribute('data-color')).toBe('green');
+
+    eventbus.emit('series:update', { id: 's1', options: { color: 'blue' } });
+    expect(group.getAttribute('data-color')).toBe('blue');
+  });
+
   // listen_to_seriesremove_event
   it('listen to series:remove event', () => {
     eventbus.emit('series:add', { id: 's1', type: 'candlestick' });

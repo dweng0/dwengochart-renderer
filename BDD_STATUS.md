@@ -7,7 +7,7 @@ Checked 143 scenario(s) across 2 test file(s).
 
 - [x] Listen to series:add event
 - [x] Listen to series:remove event
-- [ ] UNCOVERED: Listen to series:update event
+- [x] Listen to series:update event
 - [ ] UNCOVERED: Listen to series:show event
 - [ ] UNCOVERED: Listen to series:hide event
 - [ ] UNCOVERED: Listen to series:type event
@@ -92,7 +92,7 @@ Checked 143 scenario(s) across 2 test file(s).
 - [ ] UNCOVERED: Reorder series via series:order event
 - [x] Remove a series via event
 - [ ] UNCOVERED: Show and hide a series via events
-- [ ] UNCOVERED: Update series options via event
+- [x] Update series options via event
 - [ ] UNCOVERED: Each series has independent styling
 - [ ] UNCOVERED: Series re-renders on viewport:changed
 - [ ] UNCOVERED: Swap series type via event
@@ -204,10 +204,9 @@ Checked 143 scenario(s) across 2 test file(s).
 - [ ] UNCOVERED: Watermark is configurable
 
 ---
-**3/143 scenarios covered.**
+**5/143 scenarios covered.**
 
-140 scenario(s) need tests:
-- Listen to series:update event
+138 scenario(s) need tests:
 - Listen to series:show event
 - Listen to series:hide event
 - Listen to series:type event
@@ -273,7 +272,6 @@ Checked 143 scenario(s) across 2 test file(s).
 - Overlay multiple series via events
 - Reorder series via series:order event
 - Show and hide a series via events
-- Update series options via event
 - Each series has independent styling
 - Series re-renders on viewport:changed
 - Swap series type via event
