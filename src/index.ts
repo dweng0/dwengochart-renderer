@@ -86,6 +86,12 @@ export class Renderer {
           group.setAttribute('data-color', payload.options.color as string);
         }
       }),
+      eventbus.on('series:order', (payload) => {
+        for (const id of payload.ids) {
+          const group = this.seriesLayer.querySelector(`[data-series-id="${id}"]`);
+          if (group) this.seriesLayer.appendChild(group);
+        }
+      }),
       eventbus.on('series:type', (payload) => {
         const group = this.seriesLayer.querySelector(`[data-series-id="${payload.id}"]`);
         group?.setAttribute('data-type', payload.type);

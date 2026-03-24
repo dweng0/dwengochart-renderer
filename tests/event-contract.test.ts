@@ -38,6 +38,18 @@ describe('Event Contract', () => {
     expect(group.getAttribute('data-color')).toBe('blue');
   });
 
+  // listen_to_seriesorder_event
+  it('listen to series:order event', () => {
+    eventbus.emit('series:add', { id: 's1', type: 'line' });
+    eventbus.emit('series:add', { id: 's2', type: 'line' });
+    eventbus.emit('series:add', { id: 's3', type: 'line' });
+
+    eventbus.emit('series:order', { ids: ['s3', 's1', 's2'] });
+
+    const groups = container.querySelectorAll('[data-series-id]');
+    expect([...groups].map((g) => g.getAttribute('data-series-id'))).toEqual(['s3', 's1', 's2']);
+  });
+
   // listen_to_seriestype_event
   it('listen to series:type event', () => {
     eventbus.emit('series:add', { id: 's1', type: 'line' });
