@@ -44,14 +44,17 @@ log('Emitted series:add { id: "s1", type: "candlestick" }');
 bus.emit('series:data', { id: 's1', bars });
 log(`Emitted series:data with ${bars.length} bars`);
 
-bus.emit('series:add', { id: 's2', type: 'line', options: { color: 'steelblue', strokeWidth: 2, smooth: 0.6 } });
-log('Emitted series:add { id: "s2", type: "line" }');
+const lineOpts = { color: 'steelblue', strokeWidth: 2, smooth: 0.6 };
+bus.emit('series:add', { id: 's2', type: 'line', options: lineOpts });
+log(`Emitted series:add { id: "s2", type: "line", options: ${JSON.stringify(lineOpts)} }`);
 bus.emit('series:data', { id: 's2', bars });
 log(`Emitted series:data for line series`);
 
 // --- show what was created ---
-const groups = container.querySelectorAll('[data-series-id]');
-log(`SVG now has ${groups.length} series group(s): ${[...groups].map(g => g.getAttribute('data-series-id')).join(', ')}`);
+requestAnimationFrame(() => {
+  const groups = container.querySelectorAll('[data-series-id]');
+  log(`SVG now has ${groups.length} series group(s): ${[...groups].map(g => g.getAttribute('data-series-id')).join(', ')}`);
+});
 
 // --- cleanup on HMR ---
 if (import.meta.hot) {

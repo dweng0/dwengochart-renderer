@@ -94,6 +94,7 @@ export class Renderer {
   private scaleX = scaleLinear<number, number>();
   private scaleY: ReturnType<typeof scaleLinear<number, number>> | ReturnType<typeof scaleLog<number, number>> = scaleLinear<number, number>();
   private seriesBars = new Map<string, Bar[]>();
+  private seriesSmooth = new Map<string, number>();
   private watermarkEl: SVGTextElement;
   private watermarkEnabled: boolean;
   private showLabels: boolean;
@@ -219,6 +220,7 @@ export class Renderer {
         }
         if (payload.options?.smooth !== undefined) {
           group.setAttribute('data-smooth', String(payload.options.smooth));
+          this.seriesSmooth.set(payload.id, payload.options.smooth);
         }
         if (payload.options?.gradient) {
           group.setAttribute('data-gradient', 'true');
@@ -245,6 +247,7 @@ export class Renderer {
         }
         if (payload.options.smooth !== undefined) {
           group.setAttribute('data-smooth', String(payload.options.smooth));
+          this.seriesSmooth.set(payload.id, payload.options.smooth);
         }
         if ('magnetMode' in payload.options) {
           this.magnetMode = !!payload.options.magnetMode;
@@ -367,6 +370,7 @@ export class Renderer {
       }),
       eventbus.on('series:remove', (payload) => {
         this.seriesBars.delete(payload.id);
+        this.seriesSmooth.delete(payload.id);
         const group = this.seriesLayer.querySelector(`[data-series-id="${payload.id}"]`);
         group?.remove();
       }),
@@ -485,9 +489,7 @@ export class Renderer {
 
     if (type === 'line') {
       const strokeWidth = parseFloat(group.getAttribute('data-stroke-width') ?? '1');
-      const smooth = group.hasAttribute('data-smooth')
-        ? parseFloat(group.getAttribute('data-smooth')!)
-        : 0;
+      const smooth = this.seriesSmooth.get(id) ?? 0;
       this.renderLineSeries(group, visible, strokeWidth, smooth);
       return;
     }
@@ -571,9 +573,8 @@ export class Renderer {
     }
 
     // smooth=0 → linear; smooth=1 → curveCardinal tension=0 (loosest/smoothest)
-    const curve = smooth > 0
-      ? curveCardinal.tension(1 - Math.min(1, Math.max(0, smooth)))
-      : curveLinear;
+    const tension = 1 - Math.min(1, Math.max(0, smooth));
+    const curve = smooth > 0 ? curveCardinal.tension(tension) : curveLinear;
 
     const lineGen = line<Bar>()
       .x((b: Bar) => this.scaleX(b.time))
