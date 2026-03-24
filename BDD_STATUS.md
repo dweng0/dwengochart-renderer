@@ -17,7 +17,7 @@ Checked 143 scenario(s) across 2 test file(s).
 - [x] Listen to symbol:resolved event for watermark and metadata
 - [x] Listen to chart:loading event
 - [x] Listen to chart:error event
-- [ ] UNCOVERED: Listen to theme:changed event
+- [x] Listen to theme:changed event
 - [ ] UNCOVERED: Emit interaction:crosshair event
 - [ ] UNCOVERED: Emit interaction:click event
 - [ ] UNCOVERED: Emit interaction:pan event
@@ -204,10 +204,9 @@ Checked 143 scenario(s) across 2 test file(s).
 - [ ] UNCOVERED: Watermark is configurable
 
 ---
-**23/143 scenarios covered.**
+**24/143 scenarios covered.**
 
-120 scenario(s) need tests:
-- Listen to theme:changed event
+119 scenario(s) need tests:
 - Emit interaction:crosshair event
 - Emit interaction:click event
 - Emit interaction:pan event

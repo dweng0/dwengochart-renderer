@@ -143,6 +143,12 @@ export class Renderer {
           this.renderSeries(id, bars);
         }
       }),
+      eventbus.on('theme:changed', (payload) => {
+        const { theme } = payload;
+        if (theme.background) this.svg.setAttribute('data-theme-background', theme.background as string);
+        if (theme.text) this.svg.setAttribute('data-theme-text', theme.text as string);
+        if (theme.grid) this.svg.setAttribute('data-theme-grid', theme.grid as string);
+      }),
       eventbus.on('chart:loading', (payload) => {
         const existing = this.svg.querySelector('.loading-indicator');
         if (payload.loading && !existing) {

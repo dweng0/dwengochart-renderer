@@ -38,6 +38,17 @@ describe('Event Contract', () => {
     expect(group.getAttribute('data-color')).toBe('blue');
   });
 
+  // listen_to_themechanged_event
+  it('listen to theme:changed event', () => {
+    eventbus.emit('theme:changed', {
+      theme: { background: '#000', text: '#fff', grid: '#333' },
+    });
+    const svg = container.querySelector('svg')!;
+    expect(svg.getAttribute('data-theme-background')).toBe('#000');
+    expect(svg.getAttribute('data-theme-text')).toBe('#fff');
+    expect(svg.getAttribute('data-theme-grid')).toBe('#333');
+  });
+
   // listen_to_chartloading_event
   it('listen to chart:loading event', () => {
     eventbus.emit('chart:loading', { loading: true });
