@@ -18,15 +18,15 @@ Checked 143 scenario(s) across 2 test file(s).
 - [x] Listen to chart:loading event
 - [x] Listen to chart:error event
 - [x] Listen to theme:changed event
-- [ ] UNCOVERED: Emit interaction:crosshair event
-- [ ] UNCOVERED: Emit interaction:click event
-- [ ] UNCOVERED: Emit interaction:pan event
-- [ ] UNCOVERED: Emit interaction:zoom event
-- [ ] UNCOVERED: Emit interaction:fit event
-- [ ] UNCOVERED: Emit renderer:ready event
-- [ ] UNCOVERED: Emit renderer:destroyed event
-- [ ] UNCOVERED: Ignore events for unknown series
-- [ ] UNCOVERED: Unsubscribe from all events on destroy
+- [x] Emit interaction:crosshair event
+- [x] Emit interaction:click event
+- [x] Emit interaction:pan event
+- [x] Emit interaction:zoom event
+- [x] Emit interaction:fit event
+- [x] Emit renderer:ready event
+- [x] Emit renderer:destroyed event
+- [x] Ignore events for unknown series
+- [x] Unsubscribe from all events on destroy
 
 ## Feature: SVG Container Setup
 
@@ -137,10 +137,10 @@ Checked 143 scenario(s) across 2 test file(s).
 
 ## Feature: Crosshair
 
-- [ ] UNCOVERED: Show crosshair on mouse move
+- [x] Show crosshair on mouse move
 - [ ] UNCOVERED: Snap crosshair to nearest bar
 - [ ] UNCOVERED: Hide crosshair when mouse leaves SVG
-- [ ] UNCOVERED: Emit interaction:crosshair on mouse move
+- [x] Emit interaction:crosshair on mouse move
 - [ ] UNCOVERED: Crosshair tooltip shows OHLCV values
 - [ ] UNCOVERED: Crosshair line style from theme
 - [ ] UNCOVERED: Crosshair is hidden during pan drag
@@ -158,8 +158,8 @@ Checked 143 scenario(s) across 2 test file(s).
 
 ## Feature: Zoom Interaction
 
-- [ ] UNCOVERED: Emit interaction:zoom on mouse wheel up
-- [ ] UNCOVERED: Emit interaction:zoom on mouse wheel down
+- [x] Emit interaction:zoom on mouse wheel up
+- [x] Emit interaction:zoom on mouse wheel down
 - [ ] UNCOVERED: Emit interaction:zoom on pinch gesture
 - [ ] UNCOVERED: Emit interaction:zoom on keyboard shortcut
 - [ ] UNCOVERED: Emit interaction:fit on double-click
@@ -204,18 +204,9 @@ Checked 143 scenario(s) across 2 test file(s).
 - [ ] UNCOVERED: Watermark is configurable
 
 ---
-**24/143 scenarios covered.**
+**37/143 scenarios covered.**
 
-119 scenario(s) need tests:
-- Emit interaction:crosshair event
-- Emit interaction:click event
-- Emit interaction:pan event
-- Emit interaction:zoom event
-- Emit interaction:fit event
-- Emit renderer:ready event
-- Emit renderer:destroyed event
-- Ignore events for unknown series
-- Unsubscribe from all events on destroy
+106 scenario(s) need tests:
 - Initialize SVG in a container
 - SVG is resolution-independent
 - Respond to container resize
@@ -285,10 +276,8 @@ Checked 143 scenario(s) across 2 test file(s).
 - Handle gaps in time data (weekends/holidays)
 - Configurable timezone override
 - Hierarchical time labels at boundary crossings
-- Show crosshair on mouse move
 - Snap crosshair to nearest bar
 - Hide crosshair when mouse leaves SVG
-- Emit interaction:crosshair on mouse move
 - Crosshair tooltip shows OHLCV values
 - Crosshair line style from theme
 - Crosshair is hidden during pan drag
@@ -300,8 +289,6 @@ Checked 143 scenario(s) across 2 test file(s).
 - Kinetic scrolling emits pan events
 - Small mouse movements do not trigger pan
 - Right-click drag does not pan
-- Emit interaction:zoom on mouse wheel up
-- Emit interaction:zoom on mouse wheel down
 - Emit interaction:zoom on pinch gesture
 - Emit interaction:zoom on keyboard shortcut
 - Emit interaction:fit on double-click

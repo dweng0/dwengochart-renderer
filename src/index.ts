@@ -32,7 +32,10 @@ export interface Theme {
   [key: string]: unknown;
 }
 
+export type InteractionPoint = { price: number; time: number; x: number; y: number };
+
 export type RendererEvents = {
+  // Inbound (from core)
   'series:add': { id: string; type: string; options?: SeriesOptions };
   'series:remove': { id: string };
   'series:update': { id: string; options: Partial<SeriesOptions> };
@@ -51,6 +54,14 @@ export type RendererEvents = {
   'chart:loading': { loading: boolean; region?: 'left' | 'center' };
   'chart:error': { message: string } | null;
   'theme:changed': { theme: Theme };
+  // Outbound (emitted by renderer)
+  'interaction:crosshair': InteractionPoint | null;
+  'interaction:click': InteractionPoint;
+  'interaction:pan': { deltaX: number };
+  'interaction:zoom': { delta: number; centerX: number };
+  'interaction:fit': Record<string, never>;
+  'renderer:ready': Record<string, never>;
+  'renderer:destroyed': Record<string, never>;
 };
 
 // Default pixel dimensions (updated by resize handling in a later scenario)
@@ -68,8 +79,12 @@ export class Renderer {
   private watermarkEl: SVGTextElement;
   private priceAxisEl: SVGGElement;
   private timeAxisEl: SVGGElement;
+  private dragStartX: number | null = null;
+  private domListeners: Array<{ el: Element; type: string; fn: EventListener }> = [];
+  private eventbus: EventBus<RendererEvents>;
 
   constructor(container: HTMLElement, eventbus: EventBus<RendererEvents>) {
+    this.eventbus = eventbus;
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('width', '100%');
     svg.setAttribute('height', '100%');
@@ -95,6 +110,9 @@ export class Renderer {
     timeAxis.setAttribute('class', 'time-axis');
     svg.appendChild(timeAxis);
     this.timeAxisEl = timeAxis;
+
+    this.bindDomEvents(eventbus);
+    eventbus.emit('renderer:ready', {});
 
     this.unsubscribers.push(
       eventbus.on('series:add', (payload) => {
@@ -202,10 +220,73 @@ export class Renderer {
     }
   }
 
+  private bindDomEvents(eventbus: EventBus<RendererEvents>): void {
+    const rect = () => this.svg.getBoundingClientRect();
+
+    const toPoint = (e: MouseEvent): InteractionPoint => {
+      const r = rect();
+      const x = e.clientX - r.left;
+      const y = e.clientY - r.top;
+      return { x, y, time: this.scaleX.invert(x), price: this.scaleY.invert(y) };
+    };
+
+    const onMouseMove = ((e: Event) => {
+      const me = e as MouseEvent;
+      if (me.buttons === 1 && this.dragStartX !== null) {
+        const deltaX = me.clientX - this.dragStartX;
+        this.dragStartX = me.clientX;
+        eventbus.emit('interaction:pan', { deltaX });
+      } else {
+        eventbus.emit('interaction:crosshair', toPoint(me));
+      }
+    }) as EventListener;
+
+    const onMouseDown = ((e: Event) => {
+      this.dragStartX = (e as MouseEvent).clientX;
+    }) as EventListener;
+
+    const onMouseUp = (() => {
+      this.dragStartX = null;
+    }) as EventListener;
+
+    const onClick = ((e: Event) => {
+      eventbus.emit('interaction:click', toPoint(e as MouseEvent));
+    }) as EventListener;
+
+    const onDblClick = (() => {
+      eventbus.emit('interaction:fit', {});
+    }) as EventListener;
+
+    const onWheel = ((e: Event) => {
+      const we = e as WheelEvent;
+      const r = rect();
+      eventbus.emit('interaction:zoom', { delta: we.deltaY, centerX: we.clientX - r.left });
+    }) as EventListener;
+
+    const listeners: Array<{ el: Element; type: string; fn: EventListener }> = [
+      { el: this.svg, type: 'mousemove', fn: onMouseMove },
+      { el: this.svg, type: 'mousedown', fn: onMouseDown },
+      { el: this.svg, type: 'mouseup', fn: onMouseUp },
+      { el: this.svg, type: 'click', fn: onClick },
+      { el: this.svg, type: 'dblclick', fn: onDblClick },
+      { el: this.svg, type: 'wheel', fn: onWheel },
+    ];
+
+    for (const { el, type, fn } of listeners) {
+      el.addEventListener(type, fn);
+    }
+    this.domListeners = listeners;
+  }
+
   destroy(): void {
+    for (const { el, type, fn } of this.domListeners) {
+      el.removeEventListener(type, fn);
+    }
+    this.domListeners = [];
     this.unsubscribers.forEach((fn) => fn());
     this.unsubscribers = [];
     this.seriesBars.clear();
     this.svg.remove();
+    this.eventbus.emit('renderer:destroyed', {});
   }
 }

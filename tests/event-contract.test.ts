@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { EventBus } from '@yatamazuki/typed-eventbus';
 import type { RendererEvents } from '../src/index';
 import { Renderer } from '../src/index';
@@ -170,5 +170,123 @@ describe('Event Contract', () => {
 
     eventbus.emit('series:remove', { id: 's1' });
     expect(container.querySelector('[data-series-id="s1"]')).toBeNull();
+  });
+
+  // emit_interactioncrosshair_event
+  it('emit interaction:crosshair event', () => {
+    const handler = vi.fn();
+    eventbus.on('interaction:crosshair', handler);
+    eventbus.emit('viewport:changed', { timeRange: [1000, 5000], priceRange: [50, 150] });
+
+    const svg = container.querySelector('svg')!;
+    svg.dispatchEvent(new MouseEvent('mousemove', { clientX: 400, clientY: 300, bubbles: true }));
+
+    expect(handler).toHaveBeenCalledOnce();
+    const payload = handler.mock.calls[0][0] as { x: number; y: number; time: number; price: number };
+    expect(typeof payload.x).toBe('number');
+    expect(typeof payload.y).toBe('number');
+    expect(typeof payload.time).toBe('number');
+    expect(typeof payload.price).toBe('number');
+  });
+
+  // emit_interactionclick_event
+  it('emit interaction:click event', () => {
+    const handler = vi.fn();
+    eventbus.on('interaction:click', handler);
+    eventbus.emit('viewport:changed', { timeRange: [1000, 5000], priceRange: [50, 150] });
+
+    const svg = container.querySelector('svg')!;
+    svg.dispatchEvent(new MouseEvent('click', { clientX: 200, clientY: 100, bubbles: true }));
+
+    expect(handler).toHaveBeenCalledOnce();
+    const payload = handler.mock.calls[0][0] as { x: number; y: number };
+    expect(typeof payload.x).toBe('number');
+    expect(typeof payload.y).toBe('number');
+  });
+
+  // emit_interactionpan_event
+  it('emit interaction:pan event', () => {
+    const handler = vi.fn();
+    eventbus.on('interaction:pan', handler);
+
+    const svg = container.querySelector('svg')!;
+    svg.dispatchEvent(new MouseEvent('mousedown', { clientX: 200, buttons: 1, bubbles: true }));
+    svg.dispatchEvent(new MouseEvent('mousemove', { clientX: 250, buttons: 1, bubbles: true }));
+
+    expect(handler).toHaveBeenCalledOnce();
+    expect(handler.mock.calls[0][0]).toMatchObject({ deltaX: 50 });
+  });
+
+  // emit_interactionzoom_event
+  it('emit interaction:zoom event', () => {
+    const handler = vi.fn();
+    eventbus.on('interaction:zoom', handler);
+
+    const svg = container.querySelector('svg')!;
+    svg.dispatchEvent(new WheelEvent('wheel', { deltaY: -100, clientX: 400, bubbles: true }));
+
+    expect(handler).toHaveBeenCalledOnce();
+    const payload = handler.mock.calls[0][0] as { delta: number; centerX: number };
+    expect(typeof payload.delta).toBe('number');
+    expect(typeof payload.centerX).toBe('number');
+  });
+
+  // emit_interactionfit_event
+  it('emit interaction:fit event', () => {
+    const handler = vi.fn();
+    eventbus.on('interaction:fit', handler);
+
+    const svg = container.querySelector('svg')!;
+    svg.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+
+    expect(handler).toHaveBeenCalledOnce();
+  });
+
+  // emit_rendererready_event
+  it('emit renderer:ready event', () => {
+    const localBus = new EventBus<RendererEvents>();
+    const handler = vi.fn();
+    localBus.on('renderer:ready', handler);
+
+    const localContainer = document.createElement('div');
+    document.body.appendChild(localContainer);
+    const localRenderer = new Renderer(localContainer, localBus);
+
+    expect(handler).toHaveBeenCalledOnce();
+    localRenderer.destroy();
+    document.body.removeChild(localContainer);
+  });
+
+  // emit_rendererdestroyed_event
+  it('emit renderer:destroyed event', () => {
+    const handler = vi.fn();
+    eventbus.on('renderer:destroyed', handler);
+    renderer.destroy();
+    expect(handler).toHaveBeenCalledOnce();
+    // Prevent afterEach double-destroy
+    renderer = new Renderer(container, eventbus);
+  });
+
+  // ignore_events_for_unknown_series
+  it('ignore events for unknown series', () => {
+    expect(() => {
+      eventbus.emit('series:data', {
+        id: 'nonexistent',
+        bars: [{ time: 1000, open: 100, high: 110, low: 90, close: 105 }],
+      });
+    }).not.toThrow();
+    expect(container.querySelectorAll('.bar').length).toBe(0);
+  });
+
+  // unsubscribe_from_all_events_on_destroy
+  it('unsubscribe from all events on destroy', () => {
+    renderer.destroy();
+    const handler = vi.fn();
+    eventbus.on('series:add', handler);
+    eventbus.emit('series:add', { id: 's1', type: 'line' });
+    // The renderer's own handler should not have fired (no SVG group created by renderer)
+    expect(container.querySelector('[data-series-id="s1"]')).toBeNull();
+    // Prevent afterEach issues
+    renderer = new Renderer(container, eventbus);
   });
 });
