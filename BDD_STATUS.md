@@ -1,6 +1,6 @@
 # BDD Status
 
-Checked 143 scenario(s) across 4 test file(s).
+Checked 143 scenario(s) across 5 test file(s).
 
 
 ## Feature: Event Contract
@@ -42,17 +42,17 @@ Checked 143 scenario(s) across 4 test file(s).
 
 ## Feature: Coordinate Mapping
 
-- [ ] UNCOVERED: Map time to x-pixel
-- [ ] UNCOVERED: Map x-pixel to time
-- [ ] UNCOVERED: Map price to y-pixel
-- [ ] UNCOVERED: Map y-pixel to price
-- [ ] UNCOVERED: Handle time at viewport boundary
-- [ ] UNCOVERED: Handle time outside viewport
-- [ ] UNCOVERED: Recalculate on viewport:changed event
-- [ ] UNCOVERED: Account for axis margins in coordinate mapping
-- [ ] UNCOVERED: Map coordinates with logarithmic scale from viewport:changed
-- [ ] UNCOVERED: Map coordinates with percentage scale from viewport:changed
-- [ ] UNCOVERED: Handle zero price range without division by zero
+- [x] Map time to x-pixel
+- [x] Map x-pixel to time
+- [x] Map price to y-pixel
+- [x] Map y-pixel to price
+- [x] Handle time at viewport boundary
+- [x] Handle time outside viewport
+- [x] Recalculate on viewport:changed event
+- [x] Account for axis margins in coordinate mapping
+- [x] Map coordinates with logarithmic scale from viewport:changed
+- [x] Map coordinates with percentage scale from viewport:changed
+- [x] Handle zero price range without division by zero
 
 ## Feature: Candlestick Series Rendering
 
@@ -121,7 +121,7 @@ Checked 143 scenario(s) across 4 test file(s).
 - [ ] UNCOVERED: Price axis width accommodates label length
 - [ ] UNCOVERED: Last price marker on price axis
 - [ ] UNCOVERED: Price labels include currency symbol from symbol:resolved
-- [ ] UNCOVERED: Price axis on the left side
+- [x] Price axis on the left side
 - [ ] UNCOVERED: Drag price axis emits interaction event
 - [ ] UNCOVERED: Price axis labels in logarithmic scale
 
@@ -204,21 +204,10 @@ Checked 143 scenario(s) across 4 test file(s).
 - [ ] UNCOVERED: Watermark is configurable
 
 ---
-**45/143 scenarios covered.**
+**57/143 scenarios covered.**
 
-98 scenario(s) need tests:
+86 scenario(s) need tests:
 - SVG is resolution-independent
-- Map time to x-pixel
-- Map x-pixel to time
-- Map price to y-pixel
-- Map y-pixel to price
-- Handle time at viewport boundary
-- Handle time outside viewport
-- Recalculate on viewport:changed event
-- Account for axis margins in coordinate mapping
-- Map coordinates with logarithmic scale from viewport:changed
-- Map coordinates with percentage scale from viewport:changed
-- Handle zero price range without division by zero
 - Render a bullish candle
 - Render a bearish candle
 - Render a doji (open equals close)
@@ -259,7 +248,6 @@ Checked 143 scenario(s) across 4 test file(s).
 - Price axis width accommodates label length
 - Last price marker on price axis
 - Price labels include currency symbol from symbol:resolved
-- Price axis on the left side
 - Drag price axis emits interaction event
 - Price axis labels in logarithmic scale
 - Render time labels for daily resolution

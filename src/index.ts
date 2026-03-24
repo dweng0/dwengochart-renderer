@@ -2,7 +2,7 @@
 // SVG rendering library for financial charts
 
 import { EventBus } from '@yatamazuki/typed-eventbus';
-import { scaleLinear } from 'd3-scale';
+import { scaleLinear, scaleLog } from 'd3-scale';
 
 export interface SeriesOptions {
   color?: string;
@@ -70,8 +70,8 @@ export class Renderer {
   private seriesLayer: SVGGElement;
   private unsubscribers: (() => void)[] = [];
 
-  private scaleX = scaleLinear();
-  private scaleY = scaleLinear();
+  private scaleX = scaleLinear<number, number>();
+  private scaleY: ReturnType<typeof scaleLinear<number, number>> | ReturnType<typeof scaleLog<number, number>> = scaleLinear<number, number>();
   private seriesBars = new Map<string, Bar[]>();
   private watermarkEl: SVGTextElement;
   private priceAxisEl: SVGGElement;
@@ -80,6 +80,11 @@ export class Renderer {
   private domListeners: Array<{ el: Element; type: string; fn: EventListener }> = [];
   private eventbus: EventBus<RendererEvents>;
   private resizeObserver: ResizeObserver;
+  private viewWidth = 0;
+  private viewHeight = 0;
+  private margins = { left: 0, right: 0, top: 0, bottom: 0 };
+  private currentPriceScale: 'linear' | 'logarithmic' | 'percentage' = 'linear';
+  private basePrice = 1;
 
   constructor(container: HTMLElement, eventbus: EventBus<RendererEvents>) {
     this.eventbus = eventbus;
@@ -165,9 +170,10 @@ export class Renderer {
         this.renderSeries(payload.id, payload.bars);
       }),
       eventbus.on('viewport:changed', (payload) => {
+        this.currentPriceScale = payload.priceScale ?? 'linear';
+        this.basePrice = payload.basePrice ?? 1;
         this.scaleX.domain(payload.timeRange);
-        this.scaleY.domain(payload.priceRange);
-        // Re-render all series with updated scales
+        this.applyPriceScale(payload.priceRange);
         for (const [id, bars] of this.seriesBars) {
           this.renderSeries(id, bars);
         }
@@ -216,13 +222,64 @@ export class Renderer {
   }
 
   private updateSize(width: number, height: number): void {
+    this.viewWidth = width;
+    this.viewHeight = height;
     this.svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-    this.scaleX.range([0, width]);
-    this.scaleY.range([height, 0]);
-    // Re-render all series with new scale ranges
+    this.applyRanges();
     for (const [id, bars] of this.seriesBars) {
       this.renderSeries(id, bars);
     }
+  }
+
+  private applyRanges(): void {
+    const drawW = Math.max(0, this.viewWidth - this.margins.left - this.margins.right);
+    const drawH = Math.max(0, this.viewHeight - this.margins.top - this.margins.bottom);
+    this.scaleX.range([this.margins.left, this.margins.left + drawW]);
+    this.scaleY.range([this.margins.top + drawH, this.margins.top]);
+  }
+
+  private applyPriceScale(range: [number, number]): void {
+    const [lo, hi] = range[0] === range[1] ? [range[0] - 0.5, range[1] + 0.5] : range;
+    if (this.currentPriceScale === 'logarithmic') {
+      this.scaleY = scaleLog<number, number>().domain([Math.max(lo, 1e-10), Math.max(hi, 1e-10)]);
+    } else {
+      this.scaleY = scaleLinear<number, number>().domain([lo, hi]);
+    }
+    this.applyRanges();
+  }
+
+  // --- Public coordinate mapping API ---
+
+  setMargins(margins: { left?: number; right?: number; top?: number; bottom?: number }): void {
+    this.margins = { ...this.margins, ...margins };
+    this.applyRanges();
+    for (const [id, bars] of this.seriesBars) {
+      this.renderSeries(id, bars);
+    }
+  }
+
+  mapTimeToX(time: number): number {
+    return this.scaleX(time);
+  }
+
+  mapXToTime(x: number): number {
+    return this.scaleX.invert(x);
+  }
+
+  mapPriceToY(price: number): number {
+    if (this.currentPriceScale === 'percentage') {
+      const pct = (price / this.basePrice - 1) * 100;
+      return this.scaleY(pct);
+    }
+    return this.scaleY(price);
+  }
+
+  mapYToPrice(y: number): number {
+    const raw = this.scaleY.invert(y);
+    if (this.currentPriceScale === 'percentage') {
+      return this.basePrice * (1 + raw / 100);
+    }
+    return raw;
   }
 
   private renderSeries(id: string, bars: Bar[]): void {
