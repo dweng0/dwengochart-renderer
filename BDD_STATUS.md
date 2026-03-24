@@ -1,6 +1,6 @@
 # BDD Status
 
-Checked 143 scenario(s) across 7 test file(s).
+Checked 143 scenario(s) across 8 test file(s).
 
 
 ## Feature: Event Contract
@@ -78,12 +78,12 @@ Checked 143 scenario(s) across 7 test file(s).
 
 ## Feature: Area Series Rendering
 
-- [ ] UNCOVERED: Render an area fill below the line
-- [ ] UNCOVERED: Area gradient fill
+- [x] Render an area fill below the line
+- [x] Area gradient fill
 - [x] Area render with no bars
-- [ ] UNCOVERED: Area render with a single bar
-- [ ] UNCOVERED: Baseline area fill from a specific price
-- [ ] UNCOVERED: Area border line is configurable
+- [x] Area render with a single bar
+- [x] Baseline area fill from a specific price
+- [x] Area border line is configurable
 
 ## Feature: Series Composition
 
@@ -204,14 +204,9 @@ Checked 143 scenario(s) across 7 test file(s).
 - [ ] UNCOVERED: Watermark is configurable
 
 ---
-**77/143 scenarios covered.**
+**82/143 scenarios covered.**
 
-66 scenario(s) need tests:
-- Render an area fill below the line
-- Area gradient fill
-- Area render with a single bar
-- Baseline area fill from a specific price
-- Area border line is configurable
+61 scenario(s) need tests:
 - Add a series via event
 - Overlay multiple series via events
 - Reorder series via series:order event

@@ -3,11 +3,15 @@
 
 import { EventBus } from '@yatamazuki/typed-eventbus';
 import { scaleLinear, scaleLog } from 'd3-scale';
-import { line } from 'd3-shape';
+import { line, area } from 'd3-shape';
 
 export interface SeriesOptions {
   color?: string;
   strokeWidth?: number;
+  gradient?: boolean;
+  baseline?: number;
+  borderWidth?: number;
+  borderColor?: string;
   [key: string]: unknown;
 }
 
@@ -143,6 +147,18 @@ export class Renderer {
         }
         if (payload.options?.strokeWidth !== undefined) {
           group.setAttribute('data-stroke-width', String(payload.options.strokeWidth));
+        }
+        if (payload.options?.gradient) {
+          group.setAttribute('data-gradient', 'true');
+        }
+        if (payload.options?.baseline !== undefined) {
+          group.setAttribute('data-baseline', String(payload.options.baseline));
+        }
+        if (payload.options?.borderWidth !== undefined) {
+          group.setAttribute('data-border-width', String(payload.options.borderWidth));
+        }
+        if (payload.options?.borderColor !== undefined) {
+          group.setAttribute('data-border-color', String(payload.options.borderColor));
         }
         this.seriesLayer.appendChild(group);
       }),
@@ -315,6 +331,11 @@ export class Renderer {
       return;
     }
 
+    if (type === 'area') {
+      this.renderAreaSeries(group, visible);
+      return;
+    }
+
     for (const bar of visible) {
       const barEl = document.createElementNS('http://www.w3.org/2000/svg', 'g');
       barEl.setAttribute('class', 'bar');
@@ -381,6 +402,119 @@ export class Renderer {
     path.setAttribute('stroke-width', String(strokeWidth));
     path.setAttribute('clip-path', `url(#${clipId})`);
     group.appendChild(path);
+  }
+
+  private renderAreaSeries(group: Element, bars: Bar[]): void {
+    if (bars.length === 0) return;
+
+    const seriesId = group.getAttribute('data-series-id') ?? 'series';
+    const useGradient = group.getAttribute('data-gradient') === 'true';
+    const baselineAttr = group.getAttribute('data-baseline');
+    const baseline = baselineAttr !== null ? parseFloat(baselineAttr) : null;
+    const borderWidth = group.getAttribute('data-border-width');
+    const borderColor = group.getAttribute('data-border-color');
+
+    const [yBottom] = this.scaleY.range() as [number, number]; // range is [bottom, top]
+
+    // Ensure defs element exists for gradient
+    let defs = this.svg.querySelector('defs') as SVGDefsElement | null;
+    if (useGradient && !defs) {
+      defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs') as SVGDefsElement;
+      this.svg.insertBefore(defs, this.svg.firstChild);
+    }
+
+    const gradientId = `area-gradient-${seriesId}`;
+    if (useGradient && defs) {
+      let grad = defs.querySelector(`#${gradientId}`);
+      if (!grad) {
+        grad = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+        grad.setAttribute('id', gradientId);
+        grad.setAttribute('x1', '0'); grad.setAttribute('y1', '0');
+        grad.setAttribute('x2', '0'); grad.setAttribute('y2', '1');
+        const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+        stop1.setAttribute('offset', '0%');
+        stop1.setAttribute('stop-color', '#26a69a');
+        stop1.setAttribute('stop-opacity', '0.6');
+        const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+        stop2.setAttribute('offset', '100%');
+        stop2.setAttribute('stop-color', '#26a69a');
+        stop2.setAttribute('stop-opacity', '0.05');
+        grad.appendChild(stop1);
+        grad.appendChild(stop2);
+        defs.appendChild(grad);
+      }
+    }
+
+    const fill = useGradient ? `url(#${gradientId})` : '#26a69a';
+
+    if (bars.length === 1) {
+      const cx = this.scaleX(bars[0].time);
+      const cy = this.mapPriceToY(bars[0].close);
+      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      rect.setAttribute('x', String(cx - 2));
+      rect.setAttribute('y', String(cy));
+      rect.setAttribute('width', '4');
+      rect.setAttribute('height', String(Math.abs(yBottom - cy)));
+      rect.setAttribute('fill', fill);
+      group.appendChild(rect);
+      return;
+    }
+
+    if (baseline !== null) {
+      // Split into above-baseline and below-baseline paths
+      const baselineY = this.mapPriceToY(baseline);
+      const mkAreaPath = (barsSlice: Bar[], side: 'above' | 'below') => {
+        const y0 = side === 'above' ? baselineY : baselineY;
+        const areaGen = area<Bar>()
+          .x((b: Bar) => this.scaleX(b.time))
+          .y0(y0)
+          .y1((b: Bar) => this.mapPriceToY(b.close));
+        const d = areaGen(barsSlice);
+        if (!d) return;
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', d);
+        path.setAttribute('fill', side === 'above' ? '#26a69a' : '#ef5350');
+        path.setAttribute('data-baseline-side', side === 'above' ? 'above' : 'below');
+        group.appendChild(path);
+      };
+      // Above: bars where close >= baseline
+      const aboveBars = bars.map(b => ({ ...b, close: Math.max(b.close, baseline) }));
+      mkAreaPath(aboveBars, 'above');
+      // Below: bars where close <= baseline
+      const belowBars = bars.map(b => ({ ...b, close: Math.min(b.close, baseline) }));
+      mkAreaPath(belowBars, 'below');
+      return;
+    }
+
+    // Standard area
+    const areaGen = area<Bar>()
+      .x((b: Bar) => this.scaleX(b.time))
+      .y0(yBottom)
+      .y1((b: Bar) => this.mapPriceToY(b.close));
+
+    const d = areaGen(bars);
+    if (!d) return;
+
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', d);
+    path.setAttribute('fill', fill);
+    group.appendChild(path);
+
+    // Optional border line on top
+    if (borderWidth || borderColor) {
+      const lineGen = line<Bar>()
+        .x((b: Bar) => this.scaleX(b.time))
+        .y((b: Bar) => this.mapPriceToY(b.close));
+      const ld = lineGen(bars);
+      if (ld) {
+        const borderPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        borderPath.setAttribute('d', ld);
+        borderPath.setAttribute('fill', 'none');
+        borderPath.setAttribute('stroke', borderColor ?? 'currentColor');
+        borderPath.setAttribute('stroke-width', borderWidth ?? '1');
+        group.appendChild(borderPath);
+      }
+    }
   }
 
   private renderCandlestickBar(barEl: SVGGElement, bar: Bar, slotWidth: number): void {
