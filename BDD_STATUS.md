@@ -1,6 +1,6 @@
 # BDD Status
 
-Checked 143 scenario(s) across 13 test file(s).
+Checked 143 scenario(s) across 15 test file(s).
 
 
 ## Feature: Event Contract
@@ -149,23 +149,23 @@ Checked 143 scenario(s) across 13 test file(s).
 
 ## Feature: Pan Interaction
 
-- [ ] UNCOVERED: Emit interaction:pan on mouse drag
-- [ ] UNCOVERED: Emit interaction:pan on touch drag
-- [ ] UNCOVERED: Viewport updates only via viewport:changed
-- [ ] UNCOVERED: Kinetic scrolling emits pan events
-- [ ] UNCOVERED: Small mouse movements do not trigger pan
-- [ ] UNCOVERED: Right-click drag does not pan
+- [x] Emit interaction:pan on mouse drag
+- [x] Emit interaction:pan on touch drag
+- [x] Viewport updates only via viewport:changed
+- [x] Kinetic scrolling emits pan events
+- [x] Small mouse movements do not trigger pan
+- [x] Right-click drag does not pan
 
 ## Feature: Zoom Interaction
 
 - [x] Emit interaction:zoom on mouse wheel up
 - [x] Emit interaction:zoom on mouse wheel down
-- [ ] UNCOVERED: Emit interaction:zoom on pinch gesture
-- [ ] UNCOVERED: Emit interaction:zoom on keyboard shortcut
-- [ ] UNCOVERED: Emit interaction:fit on double-click
-- [ ] UNCOVERED: Viewport updates only via viewport:changed
-- [ ] UNCOVERED: Scroll direction respects natural scrolling setting
-- [ ] UNCOVERED: Zoom transition animates between viewport:changed events
+- [x] Emit interaction:zoom on pinch gesture
+- [x] Emit interaction:zoom on keyboard shortcut
+- [x] Emit interaction:fit on double-click
+- [x] Viewport updates only via viewport:changed
+- [x] Scroll direction respects natural scrolling setting
+- [x] Zoom transition animates between viewport:changed events
 
 ## Feature: Theming
 
@@ -204,21 +204,9 @@ Checked 143 scenario(s) across 13 test file(s).
 - [ ] UNCOVERED: Watermark is configurable
 
 ---
-**113/143 scenarios covered.**
+**125/143 scenarios covered.**
 
-30 scenario(s) need tests:
-- Emit interaction:pan on mouse drag
-- Emit interaction:pan on touch drag
-- Viewport updates only via viewport:changed
-- Kinetic scrolling emits pan events
-- Small mouse movements do not trigger pan
-- Right-click drag does not pan
-- Emit interaction:zoom on pinch gesture
-- Emit interaction:zoom on keyboard shortcut
-- Emit interaction:fit on double-click
-- Viewport updates only via viewport:changed
-- Scroll direction respects natural scrolling setting
-- Zoom transition animates between viewport:changed events
+18 scenario(s) need tests:
 - Apply a light theme via event
 - Apply a dark theme via event
 - Override individual theme properties

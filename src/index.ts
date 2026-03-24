@@ -84,11 +84,16 @@ export class Renderer {
   private priceAxisEl: SVGGElement;
   private timeAxisEl: SVGGElement;
   private dragStartX: number | null = null;
+  private dragTotalDelta = 0;
+  private dragVelocityX = 0;
+  private kineticTimer: ReturnType<typeof setTimeout> | null = null;
+  private touchStartX: number | null = null;
   private priceAxisDragStartY: number | null = null;
   private currencySymbol = '';
   private lastClosePrice: number | null = null;
   private crosshairEl: SVGGElement;
   private crosshairDashed = false;
+  private naturalScrolling = false;
   private domListeners: Array<{ el: Element; type: string; fn: EventListener }> = [];
   private eventbus: EventBus<RendererEvents>;
   private resizeObserver: ResizeObserver;
@@ -302,6 +307,10 @@ export class Renderer {
   }
 
   // --- Public coordinate mapping API ---
+
+  setNaturalScrolling(enabled: boolean): void {
+    this.naturalScrolling = enabled;
+  }
 
   setMargins(margins: { left?: number; right?: number; top?: number; bottom?: number }): void {
     this.margins = { ...this.margins, ...margins };
@@ -935,17 +944,24 @@ export class Renderer {
       return { x, y, time: this.scaleX.invert(x), price: this.scaleY.invert(y) };
     };
 
+    const PAN_THRESHOLD = 3; // px before pan activates
+
     const onMouseMove = ((e: Event) => {
       const me = e as MouseEvent;
-      const r = rect();
-      const x = me.clientX - r.left;
-      const y = me.clientY - r.top;
-      if (me.buttons === 1 && this.dragStartX !== null) {
+      // Only left-button drag pans (button=0, buttons=1)
+      if (me.buttons === 1 && this.dragStartX !== null && me.button !== 2) {
         const deltaX = me.clientX - this.dragStartX;
         this.dragStartX = me.clientX;
-        this.crosshairEl.setAttribute('display', 'none');
-        eventbus.emit('interaction:pan', { deltaX });
-      } else {
+        this.dragTotalDelta += Math.abs(deltaX);
+        this.dragVelocityX = deltaX; // track last velocity
+        if (this.dragTotalDelta >= PAN_THRESHOLD) {
+          this.crosshairEl.setAttribute('display', 'none');
+          eventbus.emit('interaction:pan', { deltaX });
+        }
+      } else if (me.buttons !== 1) {
+        const r = rect();
+        const x = me.clientX - r.left;
+        const y = me.clientY - r.top;
         this.renderCrosshair(x, y);
         eventbus.emit('interaction:crosshair', toPoint(me));
       }
@@ -956,37 +972,75 @@ export class Renderer {
     }) as EventListener;
 
     const onMouseDown = ((e: Event) => {
-      this.dragStartX = (e as MouseEvent).clientX;
+      const me = e as MouseEvent;
+      if (me.button === 2) return; // ignore right-click
+      this.dragStartX = me.clientX;
+      this.dragTotalDelta = 0;
+      this.dragVelocityX = 0;
+      if (this.kineticTimer !== null) {
+        clearTimeout(this.kineticTimer);
+        this.kineticTimer = null;
+      }
     }) as EventListener;
 
     const onMouseUp = (() => {
       this.dragStartX = null;
+      // Kinetic scrolling: emit decelerating pan events
+      if (this.dragTotalDelta >= PAN_THRESHOLD && Math.abs(this.dragVelocityX) > 1) {
+        let v = this.dragVelocityX * 0.8; // initial kinetic velocity
+        const emit = () => {
+          if (Math.abs(v) < 0.5) { this.kineticTimer = null; return; }
+          eventbus.emit('interaction:pan', { deltaX: v });
+          v *= 0.85; // decelerate
+          this.kineticTimer = setTimeout(emit, 16);
+        };
+        this.kineticTimer = setTimeout(emit, 16);
+      }
+      this.dragTotalDelta = 0;
     }) as EventListener;
 
-    // Touch events for crosshair
+    // Touch events: single-finger crosshair + pan, two-finger zoom
     const onTouchStart = ((e: Event) => {
-      const te = e as TouchEvent;
-      if (te.touches.length > 0) {
+      const te = e as (Event & { touches: ArrayLike<{ clientX: number; clientY: number }> });
+      if (te.touches && te.touches.length > 0) {
         const r = rect();
         const t = te.touches[0];
         const x = t.clientX - r.left;
         const y = t.clientY - r.top;
+        this.touchStartX = t.clientX;
         this.renderCrosshair(x, y);
       }
     }) as EventListener;
 
     const onTouchMove = ((e: Event) => {
-      const te = e as TouchEvent;
-      if (te.touches.length > 0) {
+      const te = e as (Event & { touches: ArrayLike<{ clientX: number; clientY: number }> });
+      if (!te.touches) return;
+      if (te.touches.length === 1) {
         const r = rect();
         const t = te.touches[0];
         const x = t.clientX - r.left;
         const y = t.clientY - r.top;
+        if (this.touchStartX !== null) {
+          const deltaX = t.clientX - this.touchStartX;
+          if (Math.abs(deltaX) >= PAN_THRESHOLD) {
+            this.crosshairEl.setAttribute('display', 'none');
+            eventbus.emit('interaction:pan', { deltaX: deltaX });
+            this.touchStartX = t.clientX;
+            return;
+          }
+        }
         this.renderCrosshair(x, y);
+      } else if (te.touches.length === 2) {
+        // Pinch zoom handled in touchend/separate — emit zoom
+        const t0 = te.touches[0];
+        const t1 = te.touches[1];
+        const midX = ((t0.clientX + t1.clientX) / 2) - rect().left;
+        eventbus.emit('interaction:zoom', { delta: -10, centerX: midX });
       }
     }) as EventListener;
 
     const onTouchEnd = (() => {
+      this.touchStartX = null;
       this.hideCrosshair(eventbus);
     }) as EventListener;
 
@@ -1001,7 +1055,18 @@ export class Renderer {
     const onWheel = ((e: Event) => {
       const we = e as WheelEvent;
       const r = rect();
-      eventbus.emit('interaction:zoom', { delta: we.deltaY, centerX: we.clientX - r.left });
+      const delta = this.naturalScrolling ? -we.deltaY : we.deltaY;
+      eventbus.emit('interaction:zoom', { delta, centerX: we.clientX - r.left });
+    }) as EventListener;
+
+    const onKeyDown = ((e: Event) => {
+      const ke = e as KeyboardEvent;
+      const centerX = this.viewWidth / 2;
+      if (ke.key === '+' || ke.key === '=') {
+        eventbus.emit('interaction:zoom', { delta: 100, centerX });
+      } else if (ke.key === '-') {
+        eventbus.emit('interaction:zoom', { delta: -100, centerX });
+      }
     }) as EventListener;
 
     // Price axis drag — emits interaction:zoom with vertical delta
@@ -1034,6 +1099,7 @@ export class Renderer {
       { el: this.svg, type: 'touchstart', fn: onTouchStart },
       { el: this.svg, type: 'touchmove', fn: onTouchMove },
       { el: this.svg, type: 'touchend', fn: onTouchEnd },
+      { el: this.svg, type: 'keydown', fn: onKeyDown },
       { el: this.priceAxisEl, type: 'mousedown', fn: onPriceAxisMouseDown },
       { el: this.priceAxisEl, type: 'mousemove', fn: onPriceAxisMouseMove },
       { el: this.priceAxisEl, type: 'mouseup', fn: onPriceAxisMouseUp },
