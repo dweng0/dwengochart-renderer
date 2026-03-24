@@ -85,6 +85,14 @@ export class Renderer {
           group.setAttribute('data-color', payload.options.color as string);
         }
       }),
+      eventbus.on('series:show', (payload) => {
+        const group = this.seriesLayer.querySelector(`[data-series-id="${payload.id}"]`);
+        group?.removeAttribute('display');
+      }),
+      eventbus.on('series:hide', (payload) => {
+        const group = this.seriesLayer.querySelector(`[data-series-id="${payload.id}"]`);
+        group?.setAttribute('display', 'none');
+      }),
       eventbus.on('series:remove', (payload) => {
         const group = this.seriesLayer.querySelector(`[data-series-id="${payload.id}"]`);
         group?.remove();

@@ -38,6 +38,27 @@ describe('Event Contract', () => {
     expect(group.getAttribute('data-color')).toBe('blue');
   });
 
+  // listen_to_seriesshow_event
+  it('listen to series:show event', () => {
+    eventbus.emit('series:add', { id: 's1', type: 'line' });
+    eventbus.emit('series:hide', { id: 's1' });
+    const group = container.querySelector('[data-series-id="s1"]') as SVGGElement;
+    expect(group.getAttribute('display')).toBe('none');
+
+    eventbus.emit('series:show', { id: 's1' });
+    expect(group.getAttribute('display')).toBeNull();
+  });
+
+  // listen_to_serieshide_event
+  it('listen to series:hide event', () => {
+    eventbus.emit('series:add', { id: 's1', type: 'line' });
+    const group = container.querySelector('[data-series-id="s1"]') as SVGGElement;
+    expect(group.getAttribute('display')).toBeNull();
+
+    eventbus.emit('series:hide', { id: 's1' });
+    expect(group.getAttribute('display')).toBe('none');
+  });
+
   // listen_to_seriesremove_event
   it('listen to series:remove event', () => {
     eventbus.emit('series:add', { id: 's1', type: 'candlestick' });
