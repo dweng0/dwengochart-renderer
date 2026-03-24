@@ -65,6 +65,9 @@ export class Renderer {
   private scaleX = scaleLinear().range([0, DEFAULT_WIDTH]);
   private scaleY = scaleLinear().range([DEFAULT_HEIGHT, 0]);
   private seriesBars = new Map<string, Bar[]>();
+  private watermarkEl: SVGTextElement;
+  private priceAxisEl: SVGGElement;
+  private timeAxisEl: SVGGElement;
 
   constructor(container: HTMLElement, eventbus: EventBus<RendererEvents>) {
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -77,6 +80,21 @@ export class Renderer {
     seriesLayer.setAttribute('class', 'series-layer');
     svg.appendChild(seriesLayer);
     this.seriesLayer = seriesLayer;
+
+    const watermark = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    watermark.setAttribute('class', 'watermark');
+    svg.appendChild(watermark);
+    this.watermarkEl = watermark;
+
+    const priceAxis = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    priceAxis.setAttribute('class', 'price-axis');
+    svg.appendChild(priceAxis);
+    this.priceAxisEl = priceAxis;
+
+    const timeAxis = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    timeAxis.setAttribute('class', 'time-axis');
+    svg.appendChild(timeAxis);
+    this.timeAxisEl = timeAxis;
 
     this.unsubscribers.push(
       eventbus.on('series:add', (payload) => {
@@ -123,6 +141,15 @@ export class Renderer {
         // Re-render all series with updated scales
         for (const [id, bars] of this.seriesBars) {
           this.renderSeries(id, bars);
+        }
+      }),
+      eventbus.on('symbol:resolved', (payload) => {
+        this.watermarkEl.textContent = payload.symbol.name;
+        if (payload.symbol.currency_code) {
+          this.priceAxisEl.setAttribute('data-currency', payload.symbol.currency_code);
+        }
+        if (payload.symbol.timezone) {
+          this.timeAxisEl.setAttribute('data-timezone', payload.symbol.timezone);
         }
       }),
       eventbus.on('series:remove', (payload) => {

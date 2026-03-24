@@ -14,7 +14,7 @@ Checked 143 scenario(s) across 2 test file(s).
 - [x] Listen to series:order event
 - [x] Listen to series:data event
 - [x] Listen to viewport:changed event
-- [ ] UNCOVERED: Listen to symbol:resolved event for watermark and metadata
+- [x] Listen to symbol:resolved event for watermark and metadata
 - [ ] UNCOVERED: Listen to chart:loading event
 - [ ] UNCOVERED: Listen to chart:error event
 - [ ] UNCOVERED: Listen to theme:changed event
@@ -115,7 +115,7 @@ Checked 143 scenario(s) across 2 test file(s).
 ## Feature: Price Axis Rendering
 
 - [ ] UNCOVERED: Render price axis labels at sensible intervals
-- [ ] UNCOVERED: Update axis on viewport:changed
+- [x] Update axis on viewport:changed
 - [ ] UNCOVERED: Handle very small price range
 - [ ] UNCOVERED: Handle very large price range
 - [ ] UNCOVERED: Price axis width accommodates label length
@@ -131,7 +131,7 @@ Checked 143 scenario(s) across 2 test file(s).
 - [ ] UNCOVERED: Render time labels for intraday resolution
 - [ ] UNCOVERED: Labels do not overlap
 - [ ] UNCOVERED: Handle gaps in time data (weekends/holidays)
-- [ ] UNCOVERED: Display timezone from symbol:resolved
+- [x] Display timezone from symbol:resolved
 - [ ] UNCOVERED: Configurable timezone override
 - [ ] UNCOVERED: Hierarchical time labels at boundary crossings
 
@@ -198,16 +198,15 @@ Checked 143 scenario(s) across 2 test file(s).
 
 ## Feature: Watermark
 
-- [ ] UNCOVERED: Display symbol name from symbol:resolved event
+- [x] Display symbol name from symbol:resolved event
 - [ ] UNCOVERED: Watermark updates on symbol:resolved event
 - [ ] UNCOVERED: Watermark is behind all chart elements
 - [ ] UNCOVERED: Watermark is configurable
 
 ---
-**15/143 scenarios covered.**
+**19/143 scenarios covered.**
 
-128 scenario(s) need tests:
-- Listen to symbol:resolved event for watermark and metadata
+124 scenario(s) need tests:
 - Listen to chart:loading event
 - Listen to chart:error event
 - Listen to theme:changed event
@@ -275,7 +274,6 @@ Checked 143 scenario(s) across 2 test file(s).
 - Hide volume when series is removed
 - Handle bars with zero volume
 - Render price axis labels at sensible intervals
-- Update axis on viewport:changed
 - Handle very small price range
 - Handle very large price range
 - Price axis width accommodates label length
@@ -288,7 +286,6 @@ Checked 143 scenario(s) across 2 test file(s).
 - Render time labels for intraday resolution
 - Labels do not overlap
 - Handle gaps in time data (weekends/holidays)
-- Display timezone from symbol:resolved
 - Configurable timezone override
 - Hierarchical time labels at boundary crossings
 - Show crosshair on mouse move
@@ -331,7 +328,6 @@ Checked 143 scenario(s) across 2 test file(s).
 - Display error state via chart:error event
 - Clear error state via chart:error null
 - Display empty state when series has no data
-- Display symbol name from symbol:resolved event
 - Watermark updates on symbol:resolved event
 - Watermark is behind all chart elements
 - Watermark is configurable

@@ -38,6 +38,20 @@ describe('Event Contract', () => {
     expect(group.getAttribute('data-color')).toBe('blue');
   });
 
+  // listen_to_symbolresolved_event_for_watermark_and_metadata
+  it('listen to symbol:resolved event for watermark and metadata', () => {
+    eventbus.emit('symbol:resolved', {
+      symbol: { name: 'AAPL', currency_code: 'USD', timezone: 'America/New_York' },
+    });
+    const watermark = container.querySelector('.watermark');
+    expect(watermark).not.toBeNull();
+    expect(watermark!.textContent).toBe('AAPL');
+    const priceAxis = container.querySelector('.price-axis');
+    expect(priceAxis?.getAttribute('data-currency')).toBe('USD');
+    const timeAxis = container.querySelector('.time-axis');
+    expect(timeAxis?.getAttribute('data-timezone')).toBe('America/New_York');
+  });
+
   // listen_to_viewportchanged_event
   it('listen to viewport:changed event', () => {
     eventbus.emit('series:add', { id: 's1', type: 'candlestick' });
