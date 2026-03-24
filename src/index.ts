@@ -84,6 +84,9 @@ export class Renderer {
   private priceAxisEl: SVGGElement;
   private timeAxisEl: SVGGElement;
   private dragStartX: number | null = null;
+  private priceAxisDragStartY: number | null = null;
+  private currencySymbol = '';
+  private lastClosePrice: number | null = null;
   private domListeners: Array<{ el: Element; type: string; fn: EventListener }> = [];
   private eventbus: EventBus<RendererEvents>;
   private resizeObserver: ResizeObserver;
@@ -196,6 +199,10 @@ export class Renderer {
       eventbus.on('series:data', (payload) => {
         this.seriesBars.set(payload.id, payload.bars);
         this.renderSeries(payload.id, payload.bars);
+        if (payload.bars.length > 0) {
+          this.lastClosePrice = payload.bars[payload.bars.length - 1].close;
+          this.renderPriceAxis();
+        }
       }),
       eventbus.on('viewport:changed', (payload) => {
         this.viewportSet = true;
@@ -206,6 +213,7 @@ export class Renderer {
         for (const [id, bars] of this.seriesBars) {
           this.renderSeries(id, bars);
         }
+        this.renderPriceAxis();
       }),
       eventbus.on('theme:changed', (payload) => {
         const { theme } = payload;
@@ -237,10 +245,14 @@ export class Renderer {
         this.watermarkEl.textContent = payload.symbol.name;
         if (payload.symbol.currency_code) {
           this.priceAxisEl.setAttribute('data-currency', payload.symbol.currency_code);
+          this.currencySymbol = payload.symbol.currency_code === 'USD' ? '$' :
+                                payload.symbol.currency_code === 'EUR' ? '€' :
+                                payload.symbol.currency_code === 'GBP' ? '£' : '';
         }
         if (payload.symbol.timezone) {
           this.timeAxisEl.setAttribute('data-timezone', payload.symbol.timezone);
         }
+        this.renderPriceAxis();
       }),
       eventbus.on('series:remove', (payload) => {
         this.seriesBars.delete(payload.id);
@@ -529,6 +541,91 @@ export class Renderer {
     }
   }
 
+  private renderPriceAxis(): void {
+    const axis = this.priceAxisEl;
+    while (axis.firstChild) axis.removeChild(axis.firstChild);
+
+    if (!this.viewportSet) return;
+
+    const axisX = this.viewWidth; // right edge by default
+    const chartWidth = this.viewWidth;
+
+    const ticks = this.scaleY.ticks(6);
+
+    // Format tick value
+    const fmt = (v: number): string => {
+      const sym = this.currencySymbol;
+      const range = Math.abs((this.scaleY.domain()[1] as number) - (this.scaleY.domain()[0] as number));
+      let formatted: string;
+      if (range < 0.1) {
+        formatted = v.toFixed(4);
+      } else if (range < 1) {
+        formatted = v.toFixed(3);
+      } else if (range < 10) {
+        formatted = v.toFixed(2);
+      } else {
+        formatted = v.toLocaleString('en-US', { maximumFractionDigits: 2 });
+      }
+      return sym + formatted;
+    };
+
+    for (const tick of ticks) {
+      const y = this.scaleY(tick as number);
+
+      // Gridline
+      const gridLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      gridLine.setAttribute('x1', '0');
+      gridLine.setAttribute('y1', String(y));
+      gridLine.setAttribute('x2', String(chartWidth));
+      gridLine.setAttribute('y2', String(y));
+      gridLine.setAttribute('stroke', '#333');
+      gridLine.setAttribute('stroke-width', '1');
+      axis.appendChild(gridLine);
+
+      // Label
+      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      text.setAttribute('x', String(axisX - 4));
+      text.setAttribute('y', String(y));
+      text.setAttribute('text-anchor', 'end');
+      text.setAttribute('dominant-baseline', 'middle');
+      text.setAttribute('font-size', '11');
+      text.textContent = fmt(tick as number);
+      axis.appendChild(text);
+    }
+
+    // Last price marker
+    if (this.lastClosePrice !== null) {
+      const [lo, hi] = this.scaleY.domain() as [number, number];
+      const inRange = this.lastClosePrice >= Math.min(lo, hi) && this.lastClosePrice <= Math.max(lo, hi);
+      if (inRange) {
+        const ly = this.mapPriceToY(this.lastClosePrice);
+
+        // Dashed horizontal line
+        const dashLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        dashLine.setAttribute('x1', '0');
+        dashLine.setAttribute('y1', String(ly));
+        dashLine.setAttribute('x2', String(chartWidth));
+        dashLine.setAttribute('y2', String(ly));
+        dashLine.setAttribute('stroke', '#f0c040');
+        dashLine.setAttribute('stroke-dasharray', '4,2');
+        dashLine.setAttribute('stroke-width', '1');
+        axis.appendChild(dashLine);
+
+        // Highlighted label
+        const lText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        lText.setAttribute('x', String(axisX - 4));
+        lText.setAttribute('y', String(ly));
+        lText.setAttribute('text-anchor', 'end');
+        lText.setAttribute('dominant-baseline', 'middle');
+        lText.setAttribute('font-size', '11');
+        lText.setAttribute('font-weight', 'bold');
+        lText.setAttribute('data-last-price', String(this.lastClosePrice));
+        lText.textContent = fmt(this.lastClosePrice);
+        axis.appendChild(lText);
+      }
+    }
+  }
+
   private renderVolumeSeries(group: Element, bars: Bar[]): void {
     if (bars.length === 0) return;
 
@@ -672,6 +769,25 @@ export class Renderer {
       eventbus.emit('interaction:zoom', { delta: we.deltaY, centerX: we.clientX - r.left });
     }) as EventListener;
 
+    // Price axis drag — emits interaction:zoom with vertical delta
+    const onPriceAxisMouseDown = ((e: Event) => {
+      this.priceAxisDragStartY = (e as MouseEvent).clientY;
+      e.stopPropagation();
+    }) as EventListener;
+
+    const onPriceAxisMouseMove = ((e: Event) => {
+      const me = e as MouseEvent;
+      if (me.buttons === 1 && this.priceAxisDragStartY !== null) {
+        const deltaY = me.clientY - this.priceAxisDragStartY;
+        this.priceAxisDragStartY = me.clientY;
+        eventbus.emit('interaction:zoom', { delta: deltaY, centerX: this.viewWidth / 2 });
+      }
+    }) as EventListener;
+
+    const onPriceAxisMouseUp = (() => {
+      this.priceAxisDragStartY = null;
+    }) as EventListener;
+
     const listeners: Array<{ el: Element; type: string; fn: EventListener }> = [
       { el: this.svg, type: 'mousemove', fn: onMouseMove },
       { el: this.svg, type: 'mousedown', fn: onMouseDown },
@@ -679,6 +795,9 @@ export class Renderer {
       { el: this.svg, type: 'click', fn: onClick },
       { el: this.svg, type: 'dblclick', fn: onDblClick },
       { el: this.svg, type: 'wheel', fn: onWheel },
+      { el: this.priceAxisEl, type: 'mousedown', fn: onPriceAxisMouseDown },
+      { el: this.priceAxisEl, type: 'mousemove', fn: onPriceAxisMouseMove },
+      { el: this.priceAxisEl, type: 'mouseup', fn: onPriceAxisMouseUp },
     ];
 
     for (const { el, type, fn } of listeners) {

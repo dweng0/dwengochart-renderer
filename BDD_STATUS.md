@@ -1,6 +1,6 @@
 # BDD Status
 
-Checked 143 scenario(s) across 10 test file(s).
+Checked 143 scenario(s) across 11 test file(s).
 
 
 ## Feature: Event Contract
@@ -114,16 +114,16 @@ Checked 143 scenario(s) across 10 test file(s).
 
 ## Feature: Price Axis Rendering
 
-- [ ] UNCOVERED: Render price axis labels at sensible intervals
+- [x] Render price axis labels at sensible intervals
 - [x] Update axis on viewport:changed
-- [ ] UNCOVERED: Handle very small price range
-- [ ] UNCOVERED: Handle very large price range
-- [ ] UNCOVERED: Price axis width accommodates label length
-- [ ] UNCOVERED: Last price marker on price axis
-- [ ] UNCOVERED: Price labels include currency symbol from symbol:resolved
+- [x] Handle very small price range
+- [x] Handle very large price range
+- [x] Price axis width accommodates label length
+- [x] Last price marker on price axis
+- [x] Price labels include currency symbol from symbol:resolved
 - [x] Price axis on the left side
-- [ ] UNCOVERED: Drag price axis emits interaction event
-- [ ] UNCOVERED: Price axis labels in logarithmic scale
+- [x] Drag price axis emits interaction event
+- [x] Price axis labels in logarithmic scale
 
 ## Feature: Time Axis Rendering
 
@@ -204,17 +204,9 @@ Checked 143 scenario(s) across 10 test file(s).
 - [ ] UNCOVERED: Watermark is configurable
 
 ---
-**93/143 scenarios covered.**
+**101/143 scenarios covered.**
 
-50 scenario(s) need tests:
-- Render price axis labels at sensible intervals
-- Handle very small price range
-- Handle very large price range
-- Price axis width accommodates label length
-- Last price marker on price axis
-- Price labels include currency symbol from symbol:resolved
-- Drag price axis emits interaction event
-- Price axis labels in logarithmic scale
+42 scenario(s) need tests:
 - Render time labels for daily resolution
 - Render time labels for intraday resolution
 - Labels do not overlap
