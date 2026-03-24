@@ -20,6 +20,7 @@ describe('Event Contract', () => {
     document.body.removeChild(container);
   });
 
+  // listen_to_seriesadd_event
   it('listen to series:add event', () => {
     eventbus.emit('series:add', { id: 's1', type: 'candlestick', options: {} });
     const group = container.querySelector('[data-series-id="s1"]');

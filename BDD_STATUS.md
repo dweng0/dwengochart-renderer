@@ -5,7 +5,7 @@ Checked 143 scenario(s) across 2 test file(s).
 
 ## Feature: Event Contract
 
-- [ ] UNCOVERED: Listen to series:add event
+- [x] Listen to series:add event
 - [ ] UNCOVERED: Listen to series:remove event
 - [ ] UNCOVERED: Listen to series:update event
 - [ ] UNCOVERED: Listen to series:show event
@@ -204,10 +204,9 @@ Checked 143 scenario(s) across 2 test file(s).
 - [ ] UNCOVERED: Watermark is configurable
 
 ---
-**1/143 scenarios covered.**
+**2/143 scenarios covered.**
 
-142 scenario(s) need tests:
-- Listen to series:add event
+141 scenario(s) need tests:
 - Listen to series:remove event
 - Listen to series:update event
 - Listen to series:show event
