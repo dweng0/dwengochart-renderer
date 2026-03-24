@@ -102,6 +102,13 @@ export class Renderer {
   private naturalScrolling = false;
   private currentTheme: Record<string, unknown> = {};
   private _onVisibilityChange: (() => void) | null = null;
+  private _tabHidden = false;
+  private _rafPending = false;
+  private _rafId: number | null = null;
+  private _dirtySeriesIds = new Set<string>();
+  private _allDirty = false;
+  private _lastPinchDist: number | null = null;
+  private magnetMode = false;
   private domListeners: Array<{ el: Element; type: string; fn: EventListener }> = [];
   private eventbus: EventBus<RendererEvents>;
   private resizeObserver: ResizeObserver;
@@ -176,12 +183,12 @@ export class Renderer {
 
     // Pause rendering when tab hidden; resume on visibility restored
     this._onVisibilityChange = () => {
-      if (!document.hidden) {
-        for (const [id, bars] of this.seriesBars) {
-          this.renderSeries(id, bars);
-        }
-        this.renderPriceAxis();
-        this.renderTimeAxis();
+      if (document.hidden) {
+        this._tabHidden = true;
+      } else {
+        this._tabHidden = false;
+        this._allDirty = true;
+        this._flushRender();
       }
     };
     document.addEventListener('visibilitychange', this._onVisibilityChange);
@@ -222,6 +229,9 @@ export class Renderer {
         if (payload.options.color) {
           group.setAttribute('data-color', payload.options.color as string);
         }
+        if ('magnetMode' in payload.options) {
+          this.magnetMode = !!payload.options.magnetMode;
+        }
       }),
       eventbus.on('series:order', (payload) => {
         for (const id of payload.ids) {
@@ -232,8 +242,7 @@ export class Renderer {
       eventbus.on('series:type', (payload) => {
         const group = this.seriesLayer.querySelector(`[data-series-id="${payload.id}"]`);
         group?.setAttribute('data-type', payload.type);
-        const bars = this.seriesBars.get(payload.id) ?? [];
-        this.renderSeries(payload.id, bars);
+        this.scheduleRender(payload.id);
       }),
       eventbus.on('series:show', (payload) => {
         const group = this.seriesLayer.querySelector(`[data-series-id="${payload.id}"]`);
@@ -245,11 +254,9 @@ export class Renderer {
       }),
       eventbus.on('series:data', (payload) => {
         this.seriesBars.set(payload.id, payload.bars);
-        this.renderSeries(payload.id, payload.bars);
         if (payload.bars.length > 0) {
           this.lastClosePrice = payload.bars[payload.bars.length - 1].close;
           this.svg.querySelector('.empty-state')?.remove();
-          this.renderPriceAxis();
         } else {
           // Show empty state if no loading/error is active
           const hasLoading = !!this.svg.querySelector('.loading-indicator');
@@ -264,6 +271,7 @@ export class Renderer {
             this.svg.appendChild(empty);
           }
         }
+        this.scheduleRender(payload.id);
       }),
       eventbus.on('viewport:changed', (payload) => {
         this.viewportSet = true;
@@ -271,11 +279,7 @@ export class Renderer {
         this.basePrice = payload.basePrice ?? 1;
         this.scaleX.domain(payload.timeRange);
         this.applyPriceScale(payload.priceRange);
-        for (const [id, bars] of this.seriesBars) {
-          this.renderSeries(id, bars);
-        }
-        this.renderPriceAxis();
-        this.renderTimeAxis();
+        this.scheduleRender();
       }),
       eventbus.on('theme:changed', (payload) => {
         this.currentTheme = { ...this.currentTheme, ...payload.theme };
@@ -342,8 +346,7 @@ export class Renderer {
         if (payload.symbol.timezone) {
           this.timeAxisEl.setAttribute('data-timezone', payload.symbol.timezone);
         }
-        this.renderPriceAxis();
-        this.renderTimeAxis();
+        this.scheduleRender();
       }),
       eventbus.on('series:remove', (payload) => {
         this.seriesBars.delete(payload.id);
@@ -358,9 +361,7 @@ export class Renderer {
     this.viewHeight = height;
     this.svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
     this.applyRanges();
-    for (const [id, bars] of this.seriesBars) {
-      this.renderSeries(id, bars);
-    }
+    this.scheduleRender();
   }
 
   private applyRanges(): void {
@@ -389,9 +390,7 @@ export class Renderer {
   setMargins(margins: { left?: number; right?: number; top?: number; bottom?: number }): void {
     this.margins = { ...this.margins, ...margins };
     this.applyRanges();
-    for (const [id, bars] of this.seriesBars) {
-      this.renderSeries(id, bars);
-    }
+    this.scheduleRender();
   }
 
   mapTimeToX(time: number): number {
@@ -416,6 +415,35 @@ export class Renderer {
       return this.basePrice * (1 + raw / 100);
     }
     return raw;
+  }
+
+  private scheduleRender(id?: string): void {
+    if (id) this._dirtySeriesIds.add(id);
+    else this._allDirty = true;
+    if (this._tabHidden) return;
+    if (this._rafPending) return;
+    this._rafPending = true;
+    this._rafId = requestAnimationFrame(() => this._flushRender());
+  }
+
+  private _flushRender(): void {
+    this._rafPending = false;
+    this._rafId = null;
+    if (this._allDirty) {
+      for (const [id, bars] of this.seriesBars) this.renderSeries(id, bars);
+      this._dirtySeriesIds.clear();
+      this._allDirty = false;
+    } else {
+      for (const id of this._dirtySeriesIds) {
+        const bars = this.seriesBars.get(id) ?? [];
+        this.renderSeries(id, bars);
+      }
+      this._dirtySeriesIds.clear();
+    }
+    if (this.viewportSet) {
+      this.renderPriceAxis();
+      this.renderTimeAxis();
+    }
   }
 
   private renderSeries(id: string, bars: Bar[]): void {
@@ -1036,7 +1064,7 @@ export class Renderer {
         const r = rect();
         const x = me.clientX - r.left;
         const y = me.clientY - r.top;
-        this.renderCrosshair(x, y);
+        this.renderCrosshair(x, y, this.magnetMode);
         eventbus.emit('interaction:crosshair', toPoint(me));
       }
     }) as EventListener;
@@ -1084,6 +1112,11 @@ export class Renderer {
         this.touchStartX = t.clientX;
         this.renderCrosshair(x, y);
       }
+      if (te.touches && te.touches.length === 2) {
+        const t0 = te.touches[0], t1 = te.touches[1];
+        const dx = t1.clientX - t0.clientX, dy = t1.clientY - t0.clientY;
+        this._lastPinchDist = Math.sqrt(dx * dx + dy * dy);
+      }
     }) as EventListener;
 
     const onTouchMove = ((e: Event) => {
@@ -1103,18 +1136,22 @@ export class Renderer {
             return;
           }
         }
-        this.renderCrosshair(x, y);
+        this.renderCrosshair(x, y, this.magnetMode);
       } else if (te.touches.length === 2) {
-        // Pinch zoom handled in touchend/separate — emit zoom
         const t0 = te.touches[0];
         const t1 = te.touches[1];
+        const dx = t1.clientX - t0.clientX, dy = t1.clientY - t0.clientY;
+        const currDist = Math.sqrt(dx * dx + dy * dy);
+        const delta = this._lastPinchDist !== null ? this._lastPinchDist - currDist : 0;
+        this._lastPinchDist = currDist;
         const midX = ((t0.clientX + t1.clientX) / 2) - rect().left;
-        eventbus.emit('interaction:zoom', { delta: -10, centerX: midX });
+        eventbus.emit('interaction:zoom', { delta, centerX: midX });
       }
     }) as EventListener;
 
     const onTouchEnd = (() => {
       this.touchStartX = null;
+      this._lastPinchDist = null;
       this.hideCrosshair(eventbus);
     }) as EventListener;
 
@@ -1201,6 +1238,11 @@ export class Renderer {
       clearTimeout(this.kineticTimer);
       this.kineticTimer = null;
     }
+    if (this._rafId !== null) {
+      cancelAnimationFrame(this._rafId);
+      this._rafId = null;
+    }
+    this._rafPending = false;
     this.seriesBars.clear();
     this.svg.remove();
     this.eventbus.emit('renderer:destroyed', {});

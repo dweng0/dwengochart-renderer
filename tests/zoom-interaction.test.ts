@@ -42,16 +42,18 @@ describe('Zoom Interaction', () => {
 
     const makeTouch = (id: number, x: number) => ({ clientX: x, clientY: 300, identifier: id, target: svg });
 
-    // Two-finger touchmove
+    // Touchstart: fingers 200px apart (dist=200)
     svg.dispatchEvent(Object.assign(new Event('touchstart', { bubbles: true }), {
       touches: [makeTouch(1, 300), makeTouch(2, 500)],
     }));
+    // Touchmove: fingers 300px apart (dist=300) — spread = zoom in, delta = 200-300 = -100
     svg.dispatchEvent(Object.assign(new Event('touchmove', { bubbles: true }), {
-      touches: [makeTouch(1, 300), makeTouch(2, 500)],
+      touches: [makeTouch(1, 250), makeTouch(2, 550)],
     }));
 
     expect(emitted.length).toBeGreaterThan(0);
-    expect(emitted[0].centerX).toBeCloseTo(400, 0); // midpoint of 300 and 500
+    expect(emitted[0].centerX).toBeCloseTo(400, 0); // midpoint of 250 and 550
+    expect(emitted[0].delta).not.toBe(0); // real distance delta, not hardcoded
   });
 
   // emit_interactionzoom_on_keyboard_shortcut

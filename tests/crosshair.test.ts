@@ -71,9 +71,9 @@ describe('Crosshair', () => {
                   crosshair!.querySelector('line:first-child');
     expect(vLine).not.toBeNull();
     const x1 = parseFloat(vLine!.getAttribute('x1') ?? '0');
-    // Should be snapped to bar x position (around 400)
-    expect(x1).toBeGreaterThan(350);
-    expect(x1).toBeLessThan(450);
+    // Should be snapped to bar x position (around 400, tolerance ±5px)
+    expect(x1).toBeGreaterThan(395);
+    expect(x1).toBeLessThan(405);
   });
 
   // hide_crosshair_when_mouse_leaves_svg

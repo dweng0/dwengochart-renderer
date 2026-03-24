@@ -64,7 +64,8 @@ describe('Render Pipeline', () => {
 
     observer.disconnect();
     mutationCounts.push(count);
-    expect(true).toBe(true); // batching is best-effort
+    // Final state should reflect latest data
+    expect(path!.getAttribute('d')).not.toBeNull();
   });
 
   // skip_rendering_when_nothing_changed
@@ -80,7 +81,7 @@ describe('Render Pipeline', () => {
     bus2.emit('series:data', { id: 's1', bars });
 
     // Renderer should not throw and DOM should be stable
-    expect(true).toBe(true);
+    expect(r).toBeDefined();
     r.destroy();
   });
 
@@ -97,11 +98,13 @@ describe('Render Pipeline', () => {
       bus.emit('series:data', { id: 's1', bars: mkBars(100 + i) });
     }
 
+    // Flush the batched RAF
+    vi.runAllTimers();
+
     // Should not throw, and final state should be the last event's data
     const path = container.querySelector('[data-series-id="s1"] path');
     expect(path).not.toBeNull();
-    // No error means the pipeline handled rapid events correctly
-    expect(true).toBe(true);
+    expect(path!.getAttribute('d')).not.toBeNull();
   });
 
   // requestanimationframe_integration
@@ -123,8 +126,7 @@ describe('Render Pipeline', () => {
     });
 
     // rAF should have been called for scheduling
-    // (or renderer may do sync renders — just verify no crash)
-    expect(true).toBe(true);
+    expect(rafCalls.length).toBeGreaterThan(0);
     vi.unstubAllGlobals();
   });
 
