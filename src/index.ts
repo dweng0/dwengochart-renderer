@@ -12,6 +12,7 @@ export interface SeriesOptions {
   baseline?: number;
   borderWidth?: number;
   borderColor?: string;
+  heightPercent?: number;
   [key: string]: unknown;
 }
 
@@ -159,6 +160,9 @@ export class Renderer {
         }
         if (payload.options?.borderColor !== undefined) {
           group.setAttribute('data-border-color', String(payload.options.borderColor));
+        }
+        if (payload.options?.heightPercent !== undefined) {
+          group.setAttribute('data-height-percent', String(payload.options.heightPercent));
         }
         this.seriesLayer.appendChild(group);
       }),
@@ -335,6 +339,11 @@ export class Renderer {
 
     if (type === 'area') {
       this.renderAreaSeries(group, visible);
+      return;
+    }
+
+    if (type === 'volume') {
+      this.renderVolumeSeries(group, bars); // use all bars for volume scale
       return;
     }
 
@@ -517,6 +526,58 @@ export class Renderer {
         borderPath.setAttribute('stroke-width', borderWidth ?? '1');
         group.appendChild(borderPath);
       }
+    }
+  }
+
+  private renderVolumeSeries(group: Element, bars: Bar[]): void {
+    if (bars.length === 0) return;
+
+    const heightPctAttr = group.getAttribute('data-height-percent');
+    const heightPct = heightPctAttr !== null ? parseFloat(heightPctAttr) / 100 : 0.2;
+    const volumeAreaHeight = this.viewHeight * heightPct;
+    const chartBottom = this.viewHeight; // bottom of SVG
+
+    const maxVol = Math.max(...bars.map(b => b.volume ?? 0));
+    if (maxVol === 0) {
+      // Render minimal-height rects for zero-volume bars
+      for (const bar of bars) {
+        const cx = this.scaleX(bar.time);
+        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        rect.setAttribute('x', String(cx - 2));
+        rect.setAttribute('y', String(chartBottom - 1));
+        rect.setAttribute('width', '4');
+        rect.setAttribute('height', '1');
+        rect.setAttribute('fill', '#888');
+        group.appendChild(rect);
+      }
+      return;
+    }
+
+    // Calculate bar slot width
+    let slotWidth = 8;
+    if (bars.length >= 2) {
+      const dt = bars[1].time - bars[0].time;
+      const [t0] = this.scaleX.domain() as [number, number];
+      slotWidth = Math.max(1, Math.abs(this.scaleX(t0 + dt) - this.scaleX(t0)) * 0.8);
+    }
+
+    const [t0, t1] = this.scaleX.domain() as [number, number];
+    const visible = this.viewportSet ? bars.filter(b => b.time >= t0 && b.time <= t1) : bars;
+
+    for (const bar of visible) {
+      const vol = bar.volume ?? 0;
+      const barHeight = (vol / maxVol) * volumeAreaHeight;
+      const cx = this.scaleX(bar.time);
+      const isBullish = bar.close >= bar.open;
+      const color = isBullish ? '#26a69a' : '#ef5350';
+
+      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      rect.setAttribute('x', String(cx - slotWidth / 2));
+      rect.setAttribute('y', String(chartBottom - barHeight));
+      rect.setAttribute('width', String(slotWidth));
+      rect.setAttribute('height', String(Math.max(1, barHeight)));
+      rect.setAttribute('fill', color);
+      group.appendChild(rect);
     }
   }
 

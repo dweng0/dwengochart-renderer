@@ -1,6 +1,6 @@
 # BDD Status
 
-Checked 143 scenario(s) across 9 test file(s).
+Checked 143 scenario(s) across 10 test file(s).
 
 
 ## Feature: Event Contract
@@ -105,11 +105,11 @@ Checked 143 scenario(s) across 9 test file(s).
 
 ## Feature: Volume Histogram
 
-- [ ] UNCOVERED: Render volume bars below the price chart
-- [ ] UNCOVERED: Volume bar color matches candle direction
-- [ ] UNCOVERED: Volume area has its own y-scale
-- [ ] UNCOVERED: Volume area height is configurable
-- [ ] UNCOVERED: Hide volume when series is removed
+- [x] Render volume bars below the price chart
+- [x] Volume bar color matches candle direction
+- [x] Volume area has its own y-scale
+- [x] Volume area height is configurable
+- [x] Hide volume when series is removed
 - [x] Handle bars with zero volume
 
 ## Feature: Price Axis Rendering
@@ -204,14 +204,9 @@ Checked 143 scenario(s) across 9 test file(s).
 - [ ] UNCOVERED: Watermark is configurable
 
 ---
-**88/143 scenarios covered.**
+**93/143 scenarios covered.**
 
-55 scenario(s) need tests:
-- Render volume bars below the price chart
-- Volume bar color matches candle direction
-- Volume area has its own y-scale
-- Volume area height is configurable
-- Hide volume when series is removed
+50 scenario(s) need tests:
 - Render price axis labels at sensible intervals
 - Handle very small price range
 - Handle very large price range
