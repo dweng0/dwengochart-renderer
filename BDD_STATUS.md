@@ -1,6 +1,6 @@
 # BDD Status
 
-Checked 148 scenario(s) across 19 test file(s).
+Checked 150 scenario(s) across 19 test file(s).
 
 
 ## Feature: Event Contract
@@ -75,6 +75,8 @@ Checked 148 scenario(s) across 19 test file(s).
 - [x] Line is clipped to viewport boundaries
 - [x] Render a line with exactly two bars
 - [x] Line width is configurable via series options
+- [x] Line smoothness produces a curved path
+- [x] Line with smooth=0 produces straight segments
 
 ## Feature: Area Series Rendering
 
@@ -212,4 +214,4 @@ Checked 148 scenario(s) across 19 test file(s).
 - [x] Bars without labels show no indicator
 
 ---
-**148/148 scenarios covered.**
+**150/150 scenarios covered.**

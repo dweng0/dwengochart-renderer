@@ -44,7 +44,7 @@ log('Emitted series:add { id: "s1", type: "candlestick" }');
 bus.emit('series:data', { id: 's1', bars });
 log(`Emitted series:data with ${bars.length} bars`);
 
-bus.emit('series:add', { id: 's2', type: 'line', options: { color: 'steelblue', strokeWidth: 2 } });
+bus.emit('series:add', { id: 's2', type: 'line', options: { color: 'steelblue', strokeWidth: 2, smooth: 0.6 } });
 log('Emitted series:add { id: "s2", type: "line" }');
 bus.emit('series:data', { id: 's2', bars });
 log(`Emitted series:data for line series`);

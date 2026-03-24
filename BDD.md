@@ -370,6 +370,16 @@ System: A TypeScript SVG rendering library for financial charts, built with D3.j
             When a "series:data" event is received with bars
             Then the path SVG element should have stroke-width of 2
 
+        Scenario: Line smoothness produces a curved path
+            Given a "series:add" event with { id: "line1", type: "line", options: { smooth: 0.5 } }
+            When a "series:data" event is received with multiple bars
+            Then the path SVG element should contain cubic bezier curve commands (C or S)
+
+        Scenario: Line with smooth=0 produces straight segments
+            Given a "series:add" event with { id: "line1", type: "line" } (no smooth option)
+            When a "series:data" event is received with multiple bars
+            Then the path SVG element should contain only M and L commands
+
     Feature: Area Series Rendering
         As a user
         I want to see close prices rendered as a filled area

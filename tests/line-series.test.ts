@@ -113,6 +113,33 @@ describe('Line Series Rendering', () => {
     expect(path!.getAttribute('stroke-width')).toBe('2');
   });
 
+  // line_smoothness_produces_a_curved_path
+  it('line smoothness produces a curved path', () => {
+    const container = makeContainer();
+    const bus = new EventBus<RendererEvents>();
+    new Renderer(container, bus);
+    bus.emit('series:add', { id: 'line1', type: 'line', options: { smooth: 0.5 } });
+    bus.emit('viewport:changed', { timeRange: [0, 400], priceRange: [95, 115] });
+    bus.emit('series:data', { id: 'line1', bars: makeBars([100, 105, 102, 108, 103], 0, 100) });
+
+    const path = container.querySelector('[data-series-id="line1"] path')!;
+    expect(path).not.toBeNull();
+    // Cardinal curve produces C (cubic bezier) commands
+    expect(path.getAttribute('d')).toMatch(/C/i);
+  });
+
+  // line_with_smooth0_produces_straight_segments
+  it('line with smooth=0 produces straight segments', () => {
+    const { container, bus } = setup();
+    bus.emit('series:data', { id: 'line1', bars: makeBars([100, 105, 102, 108], 0, 100) });
+
+    const path = container.querySelector('[data-series-id="line1"] path')!;
+    expect(path).not.toBeNull();
+    const d = path.getAttribute('d') ?? '';
+    // Linear path: only M (moveto) and L (lineto) — no C/S/Q bezier commands
+    expect(d).not.toMatch(/[CSQcsq]/);
+  });
+
   // line_is_clipped_to_viewport_boundaries
   it('line is clipped to viewport boundaries', () => {
     const { container, bus } = setup();

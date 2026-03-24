@@ -3,11 +3,12 @@
 
 import { EventBus } from '@yatamazuki/typed-eventbus';
 import { scaleLinear, scaleLog } from 'd3-scale';
-import { line, area } from 'd3-shape';
+import { line, area, curveLinear, curveCardinal } from 'd3-shape';
 
 export interface SeriesOptions {
   color?: string;
   strokeWidth?: number;
+  smooth?: number;
   gradient?: boolean;
   baseline?: number;
   borderWidth?: number;
@@ -216,6 +217,9 @@ export class Renderer {
         if (payload.options?.strokeWidth !== undefined) {
           group.setAttribute('data-stroke-width', String(payload.options.strokeWidth));
         }
+        if (payload.options?.smooth !== undefined) {
+          group.setAttribute('data-smooth', String(payload.options.smooth));
+        }
         if (payload.options?.gradient) {
           group.setAttribute('data-gradient', 'true');
         }
@@ -238,6 +242,9 @@ export class Renderer {
         if (!group) return;
         if (payload.options.color) {
           group.setAttribute('data-color', payload.options.color as string);
+        }
+        if (payload.options.smooth !== undefined) {
+          group.setAttribute('data-smooth', String(payload.options.smooth));
         }
         if ('magnetMode' in payload.options) {
           this.magnetMode = !!payload.options.magnetMode;
@@ -478,7 +485,10 @@ export class Renderer {
 
     if (type === 'line') {
       const strokeWidth = parseFloat(group.getAttribute('data-stroke-width') ?? '1');
-      this.renderLineSeries(group, visible, strokeWidth);
+      const smooth = group.hasAttribute('data-smooth')
+        ? parseFloat(group.getAttribute('data-smooth')!)
+        : 0;
+      this.renderLineSeries(group, visible, strokeWidth, smooth);
       return;
     }
 
@@ -525,7 +535,7 @@ export class Renderer {
     }
   }
 
-  private renderLineSeries(group: Element, bars: Bar[], strokeWidth: number): void {
+  private renderLineSeries(group: Element, bars: Bar[], strokeWidth: number, smooth = 0): void {
     if (bars.length === 0) return;
 
     const seriesId = group.getAttribute('data-series-id') ?? 'series';
@@ -560,9 +570,15 @@ export class Renderer {
       return;
     }
 
+    // smooth=0 → linear; smooth=1 → curveCardinal tension=0 (loosest/smoothest)
+    const curve = smooth > 0
+      ? curveCardinal.tension(1 - Math.min(1, Math.max(0, smooth)))
+      : curveLinear;
+
     const lineGen = line<Bar>()
       .x((b: Bar) => this.scaleX(b.time))
-      .y((b: Bar) => this.mapPriceToY(b.close));
+      .y((b: Bar) => this.mapPriceToY(b.close))
+      .curve(curve);
 
     const d = lineGen(bars);
     if (!d) return;
