@@ -46,10 +46,14 @@ describe('Render Pipeline', () => {
     const observer = new MutationObserver(() => { count++; });
     observer.observe(document.body, { subtree: true, childList: true, attributes: true });
 
+    const twoBars = (c: number) => [
+      { time: 0, open: 100, high: 105, low: 98, close: c },
+      { time: 100, open: c, high: c + 5, low: c - 2, close: c + 2 },
+    ];
     // Fire multiple events synchronously
-    bus.emit('series:data', { id: 's1', bars: [{ time: 0, open: 100, high: 105, low: 98, close: 102 }] });
-    bus.emit('series:data', { id: 's1', bars: [{ time: 0, open: 100, high: 105, low: 98, close: 103 }] });
-    bus.emit('series:data', { id: 's1', bars: [{ time: 0, open: 100, high: 105, low: 98, close: 104 }] });
+    bus.emit('series:data', { id: 's1', bars: twoBars(102) });
+    bus.emit('series:data', { id: 's1', bars: twoBars(103) });
+    bus.emit('series:data', { id: 's1', bars: twoBars(104) });
 
     // Flush timers / rAF
     vi.runAllTimers();
@@ -84,12 +88,13 @@ describe('Render Pipeline', () => {
   it('handle rapid successive events', () => {
     const { container, bus } = setup();
 
+    const mkBars = (c: number) => [
+      { time: 0, open: c, high: c + 5, low: c - 2, close: c },
+      { time: 100, open: c, high: c + 5, low: c - 2, close: c + 1 },
+    ];
     // Fire 100 series:data events rapidly
     for (let i = 0; i < 100; i++) {
-      bus.emit('series:data', {
-        id: 's1',
-        bars: [{ time: 0, open: 100, high: 105, low: 98, close: 100 + i }],
-      });
+      bus.emit('series:data', { id: 's1', bars: mkBars(100 + i) });
     }
 
     // Should not throw, and final state should be the last event's data
@@ -134,7 +139,10 @@ describe('Render Pipeline', () => {
     // Emit series:data while hidden — renderer should queue but not crash
     bus.emit('series:data', {
       id: 's1',
-      bars: [{ time: 0, open: 100, high: 105, low: 98, close: 102 }],
+      bars: [
+        { time: 0, open: 100, high: 105, low: 98, close: 102 },
+        { time: 100, open: 102, high: 107, low: 100, close: 105 },
+      ],
     });
 
     // Simulate tab becoming visible again

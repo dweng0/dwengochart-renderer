@@ -72,8 +72,13 @@ export type RendererEvents = {
 };
 
 
+export interface RendererOptions {
+  watermark?: boolean;
+}
+
 export class Renderer {
   private svg: SVGSVGElement;
+  private bgRectEl: SVGRectElement;
   private seriesLayer: SVGGElement;
   private unsubscribers: (() => void)[] = [];
 
@@ -81,6 +86,7 @@ export class Renderer {
   private scaleY: ReturnType<typeof scaleLinear<number, number>> | ReturnType<typeof scaleLog<number, number>> = scaleLinear<number, number>();
   private seriesBars = new Map<string, Bar[]>();
   private watermarkEl: SVGTextElement;
+  private watermarkEnabled: boolean;
   private priceAxisEl: SVGGElement;
   private timeAxisEl: SVGGElement;
   private dragStartX: number | null = null;
@@ -94,6 +100,8 @@ export class Renderer {
   private crosshairEl: SVGGElement;
   private crosshairDashed = false;
   private naturalScrolling = false;
+  private currentTheme: Record<string, unknown> = {};
+  private _onVisibilityChange: (() => void) | null = null;
   private domListeners: Array<{ el: Element; type: string; fn: EventListener }> = [];
   private eventbus: EventBus<RendererEvents>;
   private resizeObserver: ResizeObserver;
@@ -104,13 +112,31 @@ export class Renderer {
   private basePrice = 1;
   private viewportSet = false;
 
-  constructor(container: HTMLElement, eventbus: EventBus<RendererEvents>) {
+  constructor(container: HTMLElement, eventbus: EventBus<RendererEvents>, options?: RendererOptions) {
     this.eventbus = eventbus;
+    this.watermarkEnabled = options?.watermark !== false;
+
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('width', '100%');
     svg.setAttribute('height', '100%');
     container.appendChild(svg);
     this.svg = svg;
+
+    // Background rect (first child — behind everything)
+    const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    bgRect.setAttribute('class', 'background');
+    bgRect.setAttribute('data-bg', '');
+    bgRect.setAttribute('width', '100%');
+    bgRect.setAttribute('height', '100%');
+    bgRect.setAttribute('fill', '#000000');
+    svg.appendChild(bgRect);
+    this.bgRectEl = bgRect;
+
+    // Watermark (behind series layer)
+    const watermark = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    watermark.setAttribute('class', 'watermark');
+    svg.appendChild(watermark);
+    this.watermarkEl = watermark;
 
     // Set initial viewBox from container size
     const { width, height } = container.getBoundingClientRect();
@@ -130,11 +156,6 @@ export class Renderer {
     svg.appendChild(seriesLayer);
     this.seriesLayer = seriesLayer;
 
-    const watermark = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    watermark.setAttribute('class', 'watermark');
-    svg.appendChild(watermark);
-    this.watermarkEl = watermark;
-
     const priceAxis = document.createElementNS('http://www.w3.org/2000/svg', 'g');
     priceAxis.setAttribute('class', 'price-axis');
     svg.appendChild(priceAxis);
@@ -152,6 +173,19 @@ export class Renderer {
     this.crosshairEl = crosshair;
 
     this.bindDomEvents(eventbus);
+
+    // Pause rendering when tab hidden; resume on visibility restored
+    this._onVisibilityChange = () => {
+      if (!document.hidden) {
+        for (const [id, bars] of this.seriesBars) {
+          this.renderSeries(id, bars);
+        }
+        this.renderPriceAxis();
+        this.renderTimeAxis();
+      }
+    };
+    document.addEventListener('visibilitychange', this._onVisibilityChange);
+
     eventbus.emit('renderer:ready', {});
 
     this.unsubscribers.push(
@@ -214,7 +248,21 @@ export class Renderer {
         this.renderSeries(payload.id, payload.bars);
         if (payload.bars.length > 0) {
           this.lastClosePrice = payload.bars[payload.bars.length - 1].close;
+          this.svg.querySelector('.empty-state')?.remove();
           this.renderPriceAxis();
+        } else {
+          // Show empty state if no loading/error is active
+          const hasLoading = !!this.svg.querySelector('.loading-indicator');
+          const hasError = !!this.svg.querySelector('.error-message');
+          if (!hasLoading && !hasError && !this.svg.querySelector('.empty-state')) {
+            const empty = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            empty.setAttribute('class', 'empty-state');
+            empty.setAttribute('x', String(this.viewWidth / 2));
+            empty.setAttribute('y', String(this.viewHeight / 2));
+            empty.setAttribute('text-anchor', 'middle');
+            empty.textContent = 'No data available';
+            this.svg.appendChild(empty);
+          }
         }
       }),
       eventbus.on('viewport:changed', (payload) => {
@@ -230,10 +278,32 @@ export class Renderer {
         this.renderTimeAxis();
       }),
       eventbus.on('theme:changed', (payload) => {
-        const { theme } = payload;
-        if (theme.background) this.svg.setAttribute('data-theme-background', theme.background as string);
-        if (theme.text) this.svg.setAttribute('data-theme-text', theme.text as string);
-        if (theme.grid) this.svg.setAttribute('data-theme-grid', theme.grid as string);
+        this.currentTheme = { ...this.currentTheme, ...payload.theme };
+        const theme = this.currentTheme;
+        if (theme.background) {
+          this.bgRectEl.setAttribute('fill', theme.background as string);
+          this.svg.setAttribute('data-theme-background', theme.background as string);
+        }
+        if (theme.text) {
+          this.svg.setAttribute('data-theme-text', theme.text as string);
+          this.svg.querySelectorAll('text').forEach(t => {
+            if (!t.classList.contains('watermark')) t.setAttribute('fill', theme.text as string);
+          });
+        }
+        if (theme.grid) {
+          this.svg.setAttribute('data-theme-grid', theme.grid as string);
+          this.svg.querySelectorAll('.price-axis line').forEach(l => {
+            l.setAttribute('stroke', theme.grid as string);
+          });
+        }
+        if (theme.gridlineOpacity !== undefined) {
+          this.svg.querySelectorAll('.price-axis line').forEach(l => {
+            l.setAttribute('opacity', String(theme.gridlineOpacity));
+          });
+        }
+        if (theme.fontFamily) {
+          this.svg.setAttribute('font-family', theme.fontFamily as string);
+        }
         if (theme.crosshairStyle === 'dashed') this.crosshairDashed = true;
         else if (theme.crosshairStyle === 'solid') this.crosshairDashed = false;
       }),
@@ -241,7 +311,9 @@ export class Renderer {
         const existing = this.svg.querySelector('.loading-indicator');
         if (payload.loading && !existing) {
           const el = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-          el.setAttribute('class', 'loading-indicator');
+          const region = payload.region ?? 'center';
+          el.setAttribute('class', `loading-indicator loading-indicator--${region}`);
+          el.setAttribute('data-region', region);
           this.svg.appendChild(el);
         } else if (!payload.loading && existing) {
           existing.remove();
@@ -258,7 +330,9 @@ export class Renderer {
         }
       }),
       eventbus.on('symbol:resolved', (payload) => {
-        this.watermarkEl.textContent = payload.symbol.name;
+        if (this.watermarkEnabled) {
+          this.watermarkEl.textContent = payload.symbol.name;
+        }
         if (payload.symbol.currency_code) {
           this.priceAxisEl.setAttribute('data-currency', payload.symbol.currency_code);
           this.currencySymbol = payload.symbol.currency_code === 'USD' ? '$' :
@@ -1119,6 +1193,14 @@ export class Renderer {
     this.domListeners = [];
     this.unsubscribers.forEach((fn) => fn());
     this.unsubscribers = [];
+    if (this._onVisibilityChange) {
+      document.removeEventListener('visibilitychange', this._onVisibilityChange);
+      this._onVisibilityChange = null;
+    }
+    if (this.kineticTimer !== null) {
+      clearTimeout(this.kineticTimer);
+      this.kineticTimer = null;
+    }
     this.seriesBars.clear();
     this.svg.remove();
     this.eventbus.emit('renderer:destroyed', {});
